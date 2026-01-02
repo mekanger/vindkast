@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { searchLocations, type YrLocation } from "@/lib/yrApi";
 import type { Location } from "@/types/weather";
 
 interface LocationSearchProps {
@@ -11,21 +12,9 @@ interface LocationSearchProps {
   existingLocationIds: string[];
 }
 
-// Mock search results for demo - in production this would call yr.no API
-const mockSearchResults: Location[] = [
-  { id: "oslo", name: "Oslo", region: "Oslo", country: "Norge", latitude: 59.9139, longitude: 10.7522 },
-  { id: "bergen", name: "Bergen", region: "Vestland", country: "Norge", latitude: 60.3913, longitude: 5.3221 },
-  { id: "trondheim", name: "Trondheim", region: "Trøndelag", country: "Norge", latitude: 63.4305, longitude: 10.3951 },
-  { id: "stavanger", name: "Stavanger", region: "Rogaland", country: "Norge", latitude: 58.9700, longitude: 5.7331 },
-  { id: "tromso", name: "Tromsø", region: "Troms og Finnmark", country: "Norge", latitude: 69.6492, longitude: 18.9553 },
-  { id: "kristiansand", name: "Kristiansand", region: "Agder", country: "Norge", latitude: 58.1599, longitude: 8.0182 },
-  { id: "drammen", name: "Drammen", region: "Viken", country: "Norge", latitude: 59.7439, longitude: 10.2045 },
-  { id: "bodo", name: "Bodø", region: "Nordland", country: "Norge", latitude: 67.2804, longitude: 14.4049 },
-];
-
 export const LocationSearch = ({ onLocationSelect, existingLocationIds }: LocationSearchProps) => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Location[]>([]);
+  const [results, setResults] = useState<YrLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const { toast } = useToast();
@@ -36,27 +25,43 @@ export const LocationSearch = ({ onLocationSelect, existingLocationIds }: Locati
     setIsSearching(true);
     setShowResults(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const filtered = mockSearchResults.filter(loc => 
-      loc.name.toLowerCase().includes(query.toLowerCase()) ||
-      loc.region?.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    setResults(filtered);
-    setIsSearching(false);
-  }, [query]);
+    try {
+      const locations = await searchLocations(query);
+      setResults(locations);
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Søkefeil",
+        description: "Kunne ikke søke etter steder. Prøv igjen.",
+        variant: "destructive",
+      });
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [query, toast]);
 
-  const handleSelect = (location: Location) => {
-    if (existingLocationIds.includes(location.id)) {
+  const handleSelect = (yrLocation: YrLocation) => {
+    if (existingLocationIds.includes(yrLocation.id)) {
       toast({
         title: "Sted allerede lagt til",
-        description: `${location.name} er allerede i dashbordet ditt.`,
+        description: `${yrLocation.name} er allerede i dashbordet ditt.`,
         variant: "destructive",
       });
       return;
     }
+
+    // Convert YrLocation to Location
+    const location: Location = {
+      id: yrLocation.id,
+      name: yrLocation.name,
+      region: yrLocation.region,
+      country: yrLocation.country,
+      coordinates: {
+        lat: yrLocation.coordinates.lat,
+        lon: yrLocation.coordinates.lon,
+      },
+    };
     
     onLocationSelect(location);
     setQuery("");
