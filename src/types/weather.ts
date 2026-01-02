@@ -3,24 +3,25 @@ export interface Location {
   name: string;
   region?: string;
   country?: string;
-  latitude: number;
-  longitude: number;
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
 }
 
 export interface WindForecast {
-  time: string;
-  speed: number;
-  direction: number;
-  gust?: number;
+  hour: number;
+  windSpeed: number;
+  windGust: number;
+  windDirection: number;
 }
 
 export interface DayForecast {
   date: string;
-  dayName: string;
-  hours: WindForecast[];
+  forecasts: WindForecast[];
 }
 
 export interface LocationWeather {
   location: Location;
-  forecasts: DayForecast[];
+  days: DayForecast[];
 }

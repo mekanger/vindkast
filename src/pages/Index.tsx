@@ -3,16 +3,47 @@ import { Wind } from "lucide-react";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LocationCard } from "@/components/LocationCard";
 import { EmptyState } from "@/components/EmptyState";
-import { generateMockWeatherData } from "@/lib/mockWeatherData";
+import { fetchWeatherForecast } from "@/lib/yrApi";
+import { useToast } from "@/hooks/use-toast";
 import type { Location, LocationWeather } from "@/types/weather";
 
 const Index = () => {
   const [locations, setLocations] = useState<LocationWeather[]>([]);
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
 
-  const handleLocationSelect = useCallback((location: Location) => {
-    const weatherData = generateMockWeatherData(location);
-    setLocations(prev => [...prev, weatherData]);
-  }, []);
+  const handleLocationSelect = useCallback(async (location: Location) => {
+    // Add location immediately with empty days (shows loading state)
+    const placeholderData: LocationWeather = {
+      location,
+      days: [],
+    };
+    
+    setLocations(prev => [...prev, placeholderData]);
+    setLoadingIds(prev => new Set(prev).add(location.id));
+
+    try {
+      const weatherData = await fetchWeatherForecast(location);
+      setLocations(prev => 
+        prev.map(loc => loc.location.id === location.id ? weatherData : loc)
+      );
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      toast({
+        title: "Kunne ikke hente værdata",
+        description: `Feil ved henting av værmelding for ${location.name}`,
+        variant: "destructive",
+      });
+      // Remove the location on error
+      setLocations(prev => prev.filter(loc => loc.location.id !== location.id));
+    } finally {
+      setLoadingIds(prev => {
+        const next = new Set(prev);
+        next.delete(location.id);
+        return next;
+      });
+    }
+  }, [toast]);
 
   const handleRemoveLocation = useCallback((id: string) => {
     setLocations(prev => prev.filter(loc => loc.location.id !== id));
@@ -54,6 +85,7 @@ const Index = () => {
                 key={data.location.id}
                 data={data}
                 onRemove={handleRemoveLocation}
+                isLoading={loadingIds.has(data.location.id)}
               />
             ))}
           </div>
