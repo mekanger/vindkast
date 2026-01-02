@@ -1,73 +1,140 @@
-# Welcome to your Lovable project
+# VindVarsel 🌬️
 
-## Project info
+En moderne webapp for å vise vindmeldinger fra yr.no for utvalgte steder i Norge.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Funksjonalitet
 
-## How can I edit this code?
+### Søk etter steder
+- Søk etter steder via yr.no sin lokasjonsdatabase
+- Får treff på byer, tettsteder og områder i Norge og internasjonalt
+- Viser region og land for hvert søkeresultat
 
-There are several ways of editing your application.
+### Vindmelding-dashboard
+- Vis vindmelding for flere steder samtidig
+- Viser data for de neste 3 dagene
+- Fokus på klokkeslettene 10:00, 12:00, 14:00 og 16:00
+- Vindstyrke vises med fargekodet badge (grønn/gul/oransje/rød)
+- Vindretning vises med pil og grader
 
-**Use Lovable**
+### Brukeropplevelse
+- Responsivt design som fungerer på mobil og desktop
+- Nordisk-inspirert visuelt tema
+- Smooth animasjoner og overganger
+- Toast-varsler ved handlinger
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Teknisk arkitektur
 
-Changes made via Lovable will be committed automatically to this repo.
+### Frontend
+- **React 18** med TypeScript
+- **Tailwind CSS** for styling
+- **Shadcn/ui** komponentbibliotek
+- **Lucide React** for ikoner
 
-**Use your preferred IDE**
+### Backend (Lovable Cloud)
+- **Edge Functions** for API-kall mot yr.no
+  - `yr-location-search` - Søk etter steder
+  - `yr-weather-forecast` - Hent værmelding for koordinater
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### API-integrasjoner
+- **yr.no Location API** - Søk etter steder og koordinater
+- **Met.no Locationforecast API** - Værdata (gratis, åpent API)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Filstruktur
 
-Follow these steps:
+```
+src/
+├── components/
+│   ├── EmptyState.tsx       # Vises når ingen steder er lagt til
+│   ├── LocationCard.tsx     # Viser værmelding for ett sted
+│   ├── LocationSearch.tsx   # Søkefelt med autocomplete
+│   ├── WindDirectionIcon.tsx # Pil for vindretning
+│   └── WindSpeedBadge.tsx   # Fargekodet badge for vindstyrke
+├── lib/
+│   └── yrApi.ts             # API-klient for yr.no
+├── pages/
+│   └── Index.tsx            # Hovedside med dashboard
+├── types/
+│   └── weather.ts           # TypeScript-typer
+└── index.css                # Design system og tema
+
+supabase/
+└── functions/
+    ├── yr-location-search/  # Edge function for stedsøk
+    └── yr-weather-forecast/ # Edge function for værdata
+```
+
+## Datamodell
+
+### Location
+```typescript
+interface Location {
+  id: string;
+  name: string;
+  region?: string;
+  country?: string;
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
+}
+```
+
+### WindForecast
+```typescript
+interface WindForecast {
+  hour: number;        // 10, 12, 14, eller 16
+  windSpeed: number;   // m/s
+  windGust: number;    // m/s
+  windDirection: number; // grader (0-360)
+}
+```
+
+### DayForecast
+```typescript
+interface DayForecast {
+  date: string;          // Formatert dato
+  forecasts: WindForecast[];
+}
+```
+
+## Vindstyrke-kategorier
+
+| Kategori | Farge | m/s |
+|----------|-------|-----|
+| Lett | Grønn | 0-5 |
+| Moderat | Gul | 5-10 |
+| Sterk | Oransje | 10-15 |
+| Ekstrem | Rød | 15+ |
+
+## Kreditering
+
+Værdata fra [yr.no](https://www.yr.no), levert av Meteorologisk institutt og NRK.
+
+---
+
+## Utvikling
+
+### Lokalt oppsett
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
+### Teknologier
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Lovable Cloud (Supabase)
 
-## How can I deploy this project?
+### Deploy
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Åpne [Lovable](https://lovable.dev) og klikk på Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+## Lisens
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Dette prosjektet er bygget med [Lovable](https://lovable.dev).
