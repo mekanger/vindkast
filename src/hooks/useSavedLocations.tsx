@@ -93,6 +93,18 @@ export const useSavedLocations = () => {
     if (!user) return { error: new Error('Not authenticated') };
 
     try {
+      // First delete all activity rules for this location
+      const { error: rulesError } = await supabase
+        .from('activity_rules')
+        .delete()
+        .eq('location_id', locationId);
+
+      if (rulesError) {
+        console.error('Error deleting activity rules:', rulesError);
+        // Continue with location deletion even if rules deletion fails
+      }
+
+      // Then delete the location
       const { error } = await supabase
         .from('saved_locations')
         .delete()
