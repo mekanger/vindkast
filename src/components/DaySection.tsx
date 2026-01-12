@@ -9,7 +9,7 @@ import { X } from "lucide-react";
 import type { DayForecast, Location } from "@/types/weather";
 import type { ActivityRule } from "@/types/activity";
 import { findDailyActivity } from "@/lib/activityMatcher";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import { nb } from "date-fns/locale";
 import { useMemo } from "react";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -26,37 +26,62 @@ interface DaySectionProps {
   activityRules?: ActivityRule[];
 }
 
-const DISPLAY_HOURS = [10, 12, 14, 16];
+const ALL_DISPLAY_HOURS = [10, 12, 14, 16];
 
-const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: string } => {
+/**
+ * Get display hours, filtering out hours more than 2 hours in the past for today
+ */
+const getDisplayHours = (dateStr: string): number[] => {
+  try {
+    const date = parseISO(dateStr);
+    if (!isToday(date)) {
+      return ALL_DISPLAY_HOURS;
+    }
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    // Show hours that are at most 2 hours in the past
+    const cutoffHour = currentHour - 2;
+    
+    return ALL_DISPLAY_HOURS.filter(hour => hour >= cutoffHour);
+  } catch {
+    return ALL_DISPLAY_HOURS;
+  }
+};
+
+const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: string; isoDate: string } => {
   try {
     const date = parseISO(dateStr);
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const isToday = date.toDateString() === today.toDateString();
+    const isTodayDate = date.toDateString() === today.toDateString();
     const isTomorrow = date.toDateString() === tomorrow.toDateString();
     
-    if (isToday) {
-      return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }) };
+    if (isTodayDate) {
+      return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: format(date, "yyyy-MM-dd") };
     } else if (isTomorrow) {
-      return { dayName: "I morgen", dateFormatted: format(date, "d. MMMM", { locale: nb }) };
+      return { dayName: "I morgen", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: format(date, "yyyy-MM-dd") };
     } else {
       return { 
         dayName: format(date, "EEEE", { locale: nb }), 
-        dateFormatted: format(date, "d. MMMM", { locale: nb }) 
+        dateFormatted: format(date, "d. MMMM", { locale: nb }),
+        isoDate: format(date, "yyyy-MM-dd")
       };
     }
   } catch {
-    return { dayName: dateStr, dateFormatted: "" };
+    return { dayName: dateStr, dateFormatted: "", isoDate: "" };
   }
 };
 
 export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, activityRules = [] }: DaySectionProps) => {
-  const { dayName, dateFormatted } = formatDateHeader(date);
+  const { dayName, dateFormatted, isoDate } = formatDateHeader(date);
   const { windUnit } = useUserSettings();
   const unitLabel = getWindUnitLabel(windUnit);
+  
+  // Get display hours, filtering out past hours for today
+  const displayHours = useMemo(() => getDisplayHours(isoDate), [isoDate]);
 
   // Find the recommended activity for this day
   const dailyActivity = useMemo(() => {
@@ -121,11 +146,11 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                 </div>
               ) : forecast ? (
                 <div className="mt-2 overflow-x-auto -mx-4 px-4">
-                  <div className="min-w-[280px]">
+                  <div className="min-w-[180px]">
                     {/* Header row with hours */}
-                    <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 sm:gap-2 mb-2">
+                    <div className={`grid gap-1 sm:gap-2 mb-2`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                       <div className="w-12 sm:w-16"></div>
-                      {DISPLAY_HOURS.map((hour) => (
+                      {displayHours.map((hour) => (
                         <div key={hour} className="text-center text-xs text-muted-foreground">
                           {hour}:00
                         </div>
@@ -133,9 +158,9 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                     </div>
                     
                     {/* Wind row */}
-                    <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 sm:gap-2 items-center mb-1">
+                    <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                       <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vindkast<br /><span className="font-normal">({unitLabel})</span></div>
-                      {DISPLAY_HOURS.map((hour) => {
+                      {displayHours.map((hour) => {
                         const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                         return (
                           <div key={hour} className="flex flex-col items-center gap-0.5">
@@ -158,9 +183,9 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                     
                     {/* Sea current row - only show if any hour has data */}
                     {forecast.forecasts.some(f => f.seaCurrentSpeed != null) && (
-                      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 sm:gap-2 items-center">
+                      <div className={`grid gap-1 sm:gap-2 items-center`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                         <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Havstrøm<br /><span className="font-normal">(cm/s)</span></div>
-                        {DISPLAY_HOURS.map((hour) => {
+                        {displayHours.map((hour) => {
                           const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                           return (
                             <div key={hour} className="text-center">
