@@ -114,24 +114,23 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{location.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground truncate">{location.name}</h3>
+                      <LocationActivityBadges activities={matchingActivities} />
+                    </div>
                     {location.region && (
                       <p className="text-xs text-muted-foreground truncate">{location.region}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {/* Activity badges for this location */}
-                  <LocationActivityBadges activities={matchingActivities} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveLocation(location.id)}
-                    className="transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onRemoveLocation(location.id)}
+                  className="transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="pt-0 pb-4 px-4">
