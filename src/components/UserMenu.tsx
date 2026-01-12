@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Trash2 } from 'lucide-react';
+import { LogOut, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -84,6 +84,10 @@ export const UserMenu = () => {
             </div>
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Innstillinger</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Logg ut</span>

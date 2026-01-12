@@ -12,6 +12,8 @@ import {
 import { ACTIVITY_OPTIONS, type ActivityType } from '@/types/activity';
 import type { Location } from '@/types/weather';
 import { Plus } from 'lucide-react';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { getWindUnitLabel, MS_TO_KNOTS } from '@/types/settings';
 
 interface ActivityRuleFormProps {
   locations: Location[];
@@ -25,6 +27,7 @@ interface ActivityRuleFormProps {
 }
 
 export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps) => {
+  const { windUnit } = useUserSettings();
   const [locationId, setLocationId] = useState<string>('');
   const [activity, setActivity] = useState<ActivityType | ''>('');
   const [minGust, setMinGust] = useState<string>('');
@@ -32,6 +35,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedLocation = locations.find(l => l.id === locationId);
+  const unitLabel = getWindUnitLabel(windUnit);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,14 +47,18 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
 
     if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum < 0 || maxGustNum < 0 || minGustNum > maxGustNum) return;
 
+    // Convert from display unit to m/s for storage
+    const minGustMs = windUnit === 'knots' ? minGustNum / MS_TO_KNOTS : minGustNum;
+    const maxGustMs = windUnit === 'knots' ? maxGustNum / MS_TO_KNOTS : maxGustNum;
+
     setIsSubmitting(true);
     
     const { error } = await onSubmit({
       location_id: locationId,
       location_name: selectedLocation.name,
       activity: activity as ActivityType,
-      min_gust: minGustNum,
-      max_gust: maxGustNum,
+      min_gust: minGustMs,
+      max_gust: maxGustMs,
     });
 
     setIsSubmitting(false);
@@ -110,7 +118,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
 
         <div>
           <Label htmlFor="minGust" className="text-sm font-medium">
-            Min vindkast (m/s)
+            Min vindkast ({unitLabel})
           </Label>
           <Input
             id="minGust"
@@ -126,7 +134,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
 
         <div>
           <Label htmlFor="maxGust" className="text-sm font-medium">
-            Max vindkast (m/s)
+            Max vindkast ({unitLabel})
           </Label>
           <Input
             id="maxGust"

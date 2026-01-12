@@ -4,6 +4,8 @@ import { GripVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ActivityRule } from '@/types/activity';
 import { ACTIVITY_LABELS } from '@/types/activity';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { convertWindSpeed, getWindUnitLabel } from '@/types/settings';
 
 import windsurfingImg from '@/assets/activities/windsurfing.png';
 import windfoilImg from '@/assets/activities/windfoil.png';
@@ -23,6 +25,7 @@ interface ActivityRuleItemProps {
 }
 
 export const ActivityRuleItem = ({ rule, onDelete }: ActivityRuleItemProps) => {
+  const { windUnit } = useUserSettings();
   const {
     attributes,
     listeners,
@@ -37,6 +40,10 @@ export const ActivityRuleItem = ({ rule, onDelete }: ActivityRuleItemProps) => {
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const minDisplay = convertWindSpeed(rule.min_gust, windUnit).toFixed(0);
+  const maxDisplay = convertWindSpeed(rule.max_gust, windUnit).toFixed(0);
+  const unitLabel = getWindUnitLabel(windUnit);
 
   return (
     <div
@@ -63,7 +70,7 @@ export const ActivityRuleItem = ({ rule, onDelete }: ActivityRuleItemProps) => {
           {ACTIVITY_LABELS[rule.activity]}
         </p>
         <p className="text-sm text-muted-foreground truncate">
-          {rule.location_name} • {rule.min_gust}-{rule.max_gust} m/s
+          {rule.location_name} • {minDisplay}-{maxDisplay} {unitLabel}
         </p>
       </div>
 
