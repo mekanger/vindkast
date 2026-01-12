@@ -31,9 +31,10 @@ import type { Location } from '@/types/weather';
 
 interface ActivityRulesManagerProps {
   locations: Location[];
+  onRulesChange?: () => void;
 }
 
-export const ActivityRulesManager = ({ locations }: ActivityRulesManagerProps) => {
+export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRulesManagerProps) => {
   const [open, setOpen] = useState(false);
   const { rules, loading, addRule, deleteRule, updatePriorities } = useActivityRules();
 
@@ -44,7 +45,7 @@ export const ActivityRulesManager = ({ locations }: ActivityRulesManagerProps) =
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -52,8 +53,25 @@ export const ActivityRulesManager = ({ locations }: ActivityRulesManagerProps) =
       const newIndex = rules.findIndex(r => r.id === over.id);
       
       const newOrder = arrayMove(rules, oldIndex, newIndex);
-      updatePriorities(newOrder.map(r => r.id));
+      await updatePriorities(newOrder.map(r => r.id));
+      onRulesChange?.();
     }
+  };
+
+  const handleAddRule = async (rule: Parameters<typeof addRule>[0]) => {
+    const result = await addRule(rule);
+    if (!result.error) {
+      onRulesChange?.();
+    }
+    return result;
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    const result = await deleteRule(ruleId);
+    if (!result.error) {
+      onRulesChange?.();
+    }
+    return result;
   };
 
   return (
@@ -84,7 +102,7 @@ export const ActivityRulesManager = ({ locations }: ActivityRulesManagerProps) =
 
           {/* Add new rule form */}
           {locations.length > 0 ? (
-            <ActivityRuleForm locations={locations} onSubmit={addRule} />
+            <ActivityRuleForm locations={locations} onSubmit={handleAddRule} />
           ) : (
             <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
               Legg til steder i dashboardet for å opprette regler.
@@ -120,7 +138,7 @@ export const ActivityRulesManager = ({ locations }: ActivityRulesManagerProps) =
                       <ActivityRuleItem
                         key={rule.id}
                         rule={rule}
-                        onDelete={deleteRule}
+                        onDelete={handleDeleteRule}
                       />
                     ))}
                   </div>
