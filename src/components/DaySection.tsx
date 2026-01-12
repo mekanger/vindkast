@@ -29,7 +29,10 @@ interface DaySectionProps {
 const ALL_DISPLAY_HOURS = [10, 12, 14, 16];
 
 /**
- * Get display hours, filtering out hours more than 2 hours in the past for today
+ * Get display hours, filtering out hours more than 2 hours in the past for today.
+ *
+ * Note: Our forecast hours are treated as UTC hours (see backend data construction),
+ * so we compare using UTC timestamps to avoid timezone mismatches in the UI.
  */
 const getDisplayHours = (dateStr: string): number[] => {
   try {
@@ -37,13 +40,15 @@ const getDisplayHours = (dateStr: string): number[] => {
     if (!isToday(date)) {
       return ALL_DISPLAY_HOURS;
     }
-    
-    const now = new Date();
-    const currentHour = now.getHours();
-    // Show hours that are at most 2 hours in the past
-    const cutoffHour = currentHour - 2;
-    
-    return ALL_DISPLAY_HOURS.filter(hour => hour >= cutoffHour);
+
+    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    return ALL_DISPLAY_HOURS.filter((hour) => {
+      const hourDateUtc = new Date(
+        `${dateStr}T${hour.toString().padStart(2, "0")}:00:00Z`
+      );
+      return hourDateUtc >= cutoff;
+    });
   } catch {
     return ALL_DISPLAY_HOURS;
   }
