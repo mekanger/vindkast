@@ -100,14 +100,14 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
       )}
 
       {/* Locations for this day */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3">
+      <div className="flex flex-wrap gap-4">
         {locationsWithForecasts.map(({ location, forecast, isLoading }) => {
           const matchingActivities = locationActivities.get(location.id) || [];
           
           return (
             <Card 
               key={location.id} 
-              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group min-w-0"
+              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group w-full sm:w-[340px] flex-shrink-0"
             >
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-start justify-between">
