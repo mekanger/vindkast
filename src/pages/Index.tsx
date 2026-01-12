@@ -65,6 +65,16 @@ const Index = () => {
   }, [user]);
 
   const handleLocationSelect = useCallback(async (location: Location) => {
+    // Check if location already exists
+    if (locations.some(loc => loc.location.id === location.id)) {
+      toast({
+        title: "Sted allerede lagt til",
+        description: `${location.name} er allerede i dashbordet.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Add location immediately with empty days (shows loading state)
     const placeholderData: LocationWeather = {
       location,
