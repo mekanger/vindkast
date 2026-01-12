@@ -33,13 +33,14 @@ import type { ActivityRule, ActivityType } from '@/types/activity';
 
 interface ActivityRulesManagerProps {
   locations: Location[];
+  rules: ActivityRule[];
   onRulesChange?: () => void;
 }
 
-export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRulesManagerProps) => {
+export const ActivityRulesManager = ({ locations, rules, onRulesChange }: ActivityRulesManagerProps) => {
   const [open, setOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ActivityRule | null>(null);
-  const { rules, loading, addRule, updateRule, deleteRule, updatePriorities } = useActivityRules();
+  const { loading, addRule, updateRule, deleteRule, updatePriorities } = useActivityRules();
 
   const sensors = useSensors(
     useSensor(PointerSensor),

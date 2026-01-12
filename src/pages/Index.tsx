@@ -225,7 +225,7 @@ const Index = () => {
                 existingLocationIds={existingLocationIds}
               />
               {user && (
-                <ActivityRulesManager locations={availableLocations} onRulesChange={refetchRules} />
+                <ActivityRulesManager locations={availableLocations} rules={activityRules} onRulesChange={refetchRules} />
               )}
               <div className="hidden md:block">
                 {user ? (
