@@ -55,11 +55,11 @@ export const ActivityRuleEditDialog = ({
     if (rule) {
       setLocationId(rule.location_id);
       setActivity(rule.activity);
-      // Convert from m/s to display unit
-      const minDisplay = convertWindSpeed(rule.min_gust, windUnit);
-      const maxDisplay = convertWindSpeed(rule.max_gust, windUnit);
-      setMinGust(minDisplay.toFixed(1));
-      setMaxGust(maxDisplay.toFixed(1));
+      // Convert from m/s to display unit as integers
+      const minDisplay = Math.round(convertWindSpeed(rule.min_gust, windUnit));
+      const maxDisplay = Math.round(convertWindSpeed(rule.max_gust, windUnit));
+      setMinGust(minDisplay.toString());
+      setMaxGust(maxDisplay.toString());
     }
   }, [rule, windUnit]);
 
@@ -154,7 +154,7 @@ export const ActivityRuleEditDialog = ({
                 <Input
                   id="edit-minGust"
                   type="number"
-                  step="0.1"
+                  step="1"
                   min="0"
                   value={minGust}
                   onChange={(e) => setMinGust(e.target.value)}
@@ -170,7 +170,7 @@ export const ActivityRuleEditDialog = ({
                 <Input
                   id="edit-maxGust"
                   type="number"
-                  step="0.1"
+                  step="1"
                   min="0"
                   value={maxGust}
                   onChange={(e) => setMaxGust(e.target.value)}
