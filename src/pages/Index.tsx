@@ -245,7 +245,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container py-8">
+      <main className="container px-4 sm:px-6 lg:px-8 py-8">
         {locations.length === 0 ? (
           <EmptyState />
         ) : (
