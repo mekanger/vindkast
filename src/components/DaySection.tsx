@@ -51,21 +51,32 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
   
   const displayHours = ALL_DISPLAY_HOURS;
 
+  // Filter activity rules to only include those for locations currently displayed
+  const activeLocationIds = useMemo(() => 
+    new Set(locationsWithForecasts.map(lf => lf.location.id)),
+    [locationsWithForecasts]
+  );
+  
+  const filteredActivityRules = useMemo(() => 
+    activityRules.filter(rule => activeLocationIds.has(rule.location_id)),
+    [activityRules, activeLocationIds]
+  );
+
   // Find the recommended activity for this day
   const dailyActivity = useMemo(() => {
-    if (activityRules.length === 0) return null;
-    return findDailyActivity(activityRules, locationsWithForecasts);
-  }, [activityRules, locationsWithForecasts]);
+    if (filteredActivityRules.length === 0) return null;
+    return findDailyActivity(filteredActivityRules, locationsWithForecasts);
+  }, [filteredActivityRules, locationsWithForecasts]);
 
   // Calculate matching activities for each location
   const locationActivities = useMemo(() => {
     const map = new Map<string, ActivityType[]>();
     for (const { location, forecast } of locationsWithForecasts) {
-      const activities = findAllMatchingActivities(activityRules, location.id, forecast);
+      const activities = findAllMatchingActivities(filteredActivityRules, location.id, forecast);
       map.set(location.id, activities);
     }
     return map;
-  }, [activityRules, locationsWithForecasts]);
+  }, [filteredActivityRules, locationsWithForecasts]);
 
   return (
     <section className="space-y-4">
