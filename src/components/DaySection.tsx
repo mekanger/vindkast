@@ -110,28 +110,29 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
               className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group w-full sm:w-[340px] flex-shrink-0"
             >
             <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">{location.name}</h3>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{location.name}</h3>
                     {location.region && (
-                      <p className="text-xs text-muted-foreground">{location.region}</p>
+                      <p className="text-xs text-muted-foreground truncate">{location.region}</p>
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onRemoveLocation(location.id)}
-                  className="transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Activity badges for this location */}
+                  <LocationActivityBadges activities={matchingActivities} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemoveLocation(location.id)}
+                    className="transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-              
-              {/* Activity badges for this location */}
-              <LocationActivityBadges activities={matchingActivities} />
             </CardHeader>
             <CardContent className="pt-0 pb-4 px-4">
               {isLoading ? (
