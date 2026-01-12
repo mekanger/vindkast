@@ -71,7 +71,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_${roundedLat}_${roundedLon}`;
+    const cacheKey = `weather_v2_${roundedLat}_${roundedLon}`;
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -96,22 +96,41 @@ serve(async (req) => {
 
     console.log('Cache miss for:', cacheKey, '- fetching from yr.no');
 
-    // Yr.no Locationforecast API (free, requires User-Agent)
+    const userAgent = 'WindDashboard/1.0 github.com/lovable-wind-dashboard';
+
+    // Fetch weather forecast from locationforecast API
     const forecastUrl = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
     
-    const response = await fetch(forecastUrl, {
-      headers: {
-        'User-Agent': 'WindDashboard/1.0 github.com/lovable-wind-dashboard',
-      },
+    const forecastResponse = await fetch(forecastUrl, {
+      headers: { 'User-Agent': userAgent },
     });
 
-    if (!response.ok) {
-      console.error('Met.no forecast API error:', response.status, response.statusText);
-      throw new Error(`Met.no API error: ${response.status}`);
+    if (!forecastResponse.ok) {
+      console.error('Met.no forecast API error:', forecastResponse.status, forecastResponse.statusText);
+      throw new Error(`Met.no API error: ${forecastResponse.status}`);
     }
 
-    const responseData = await response.json();
-    const timeseries = responseData.properties?.timeseries || [];
+    const forecastData = await forecastResponse.json();
+    const timeseries = forecastData.properties?.timeseries || [];
+
+    // Fetch ocean forecast (might fail for inland locations - that's OK)
+    let oceanTimeseries: any[] = [];
+    try {
+      const oceanUrl = `https://api.met.no/weatherapi/oceanforecast/2.0/complete?lat=${lat}&lon=${lon}`;
+      const oceanResponse = await fetch(oceanUrl, {
+        headers: { 'User-Agent': userAgent },
+      });
+      
+      if (oceanResponse.ok) {
+        const oceanData = await oceanResponse.json();
+        oceanTimeseries = oceanData.properties?.timeseries || [];
+        console.log('Ocean forecast fetched successfully, entries:', oceanTimeseries.length);
+      } else {
+        console.log('Ocean forecast not available for this location (status:', oceanResponse.status, ')');
+      }
+    } catch (oceanError) {
+      console.log('Ocean forecast fetch failed (location likely inland):', oceanError);
+    }
 
     // Get target hours: 10, 12, 14, 16
     const targetHours = [10, 12, 14, 16];
@@ -131,42 +150,41 @@ serve(async (req) => {
         // Find the closest timeseries entry for this hour
         const targetTime = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00Z`;
         
-        const entry = timeseries.find((ts: any) => ts.time === targetTime);
+        let entry = timeseries.find((ts: any) => ts.time === targetTime);
         
-        if (entry) {
-          const instant = entry.data?.instant?.details;
-          dayForecasts.push({
-            hour,
-            windSpeed: instant?.wind_speed || 0,
-            windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
-            windDirection: instant?.wind_from_direction || 0,
-          });
-        } else {
+        if (!entry) {
           // Find nearest entry
-          const nearestEntry = timeseries.find((ts: any) => {
+          entry = timeseries.find((ts: any) => {
             const tsDate = new Date(ts.time);
             return tsDate.toISOString().split('T')[0] === dateStr && 
                    tsDate.getUTCHours() >= hour - 1 && 
                    tsDate.getUTCHours() <= hour + 1;
           });
-          
-          if (nearestEntry) {
-            const instant = nearestEntry.data?.instant?.details;
-            dayForecasts.push({
-              hour,
-              windSpeed: instant?.wind_speed || 0,
-              windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
-              windDirection: instant?.wind_from_direction || 0,
-            });
-          } else {
-            dayForecasts.push({
-              hour,
-              windSpeed: 0,
-              windGust: 0,
-              windDirection: 0,
-            });
-          }
         }
+
+        // Find ocean data for this time
+        let oceanEntry = oceanTimeseries.find((ts: any) => ts.time === targetTime);
+        if (!oceanEntry) {
+          oceanEntry = oceanTimeseries.find((ts: any) => {
+            const tsDate = new Date(ts.time);
+            return tsDate.toISOString().split('T')[0] === dateStr && 
+                   tsDate.getUTCHours() >= hour - 1 && 
+                   tsDate.getUTCHours() <= hour + 1;
+          });
+        }
+
+        const instant = entry?.data?.instant?.details;
+        const oceanInstant = oceanEntry?.data?.instant?.details;
+        
+        dayForecasts.push({
+          hour,
+          windSpeed: instant?.wind_speed || 0,
+          windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
+          windDirection: instant?.wind_from_direction || 0,
+          // Ocean current data (sea_water_speed is in m/s, we convert to cm/s in client)
+          seaCurrentSpeed: oceanInstant?.sea_water_speed ?? null,
+          seaCurrentDirection: oceanInstant?.sea_water_to_direction ?? null,
+        });
       }
 
       days.push({

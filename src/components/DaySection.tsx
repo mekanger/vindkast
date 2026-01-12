@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
+import { GustBadge } from "./GustBadge";
+import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { X } from "lucide-react";
 import type { LocationWeather, DayForecast, Location } from "@/types/weather";
 import { format, parseISO } from "date-fns";
@@ -105,12 +107,16 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                         {hourForecast ? (
                           <div className="flex flex-col items-center gap-1">
                             <WindSpeedBadge speed={hourForecast.windSpeed} size="sm" />
+                            <GustBadge gust={hourForecast.windGust} />
                             <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
                               <WindDirectionIcon 
                                 direction={hourForecast.windDirection} 
                                 className="w-3 h-3"
                               />
                             </div>
+                            {hourForecast.seaCurrentSpeed != null && (
+                              <SeaCurrentBadge speed={hourForecast.seaCurrentSpeed} />
+                            )}
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-xs">-</span>
