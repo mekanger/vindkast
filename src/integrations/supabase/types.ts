@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_rules: {
+        Row: {
+          activity: string
+          created_at: string | null
+          id: string
+          location_id: string
+          location_name: string
+          max_gust: number
+          min_gust: number
+          priority: number
+          user_id: string
+        }
+        Insert: {
+          activity: string
+          created_at?: string | null
+          id?: string
+          location_id: string
+          location_name: string
+          max_gust: number
+          min_gust: number
+          priority?: number
+          user_id: string
+        }
+        Update: {
+          activity?: string
+          created_at?: string | null
+          id?: string
+          location_id?: string
+          location_name?: string
+          max_gust?: number
+          min_gust?: number
+          priority?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       location_search_cache: {
         Row: {
           cached_at: string
