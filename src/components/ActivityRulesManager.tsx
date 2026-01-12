@@ -26,8 +26,10 @@ import { Button } from '@/components/ui/button';
 import { Settings2, Info } from 'lucide-react';
 import { ActivityRuleForm } from './ActivityRuleForm';
 import { ActivityRuleItem } from './ActivityRuleItem';
+import { ActivityRuleEditDialog } from './ActivityRuleEditDialog';
 import { useActivityRules } from '@/hooks/useActivityRules';
 import type { Location } from '@/types/weather';
+import type { ActivityRule, ActivityType } from '@/types/activity';
 
 interface ActivityRulesManagerProps {
   locations: Location[];
@@ -36,7 +38,8 @@ interface ActivityRulesManagerProps {
 
 export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRulesManagerProps) => {
   const [open, setOpen] = useState(false);
-  const { rules, loading, addRule, deleteRule, updatePriorities } = useActivityRules();
+  const [editingRule, setEditingRule] = useState<ActivityRule | null>(null);
+  const { rules, loading, addRule, updateRule, deleteRule, updatePriorities } = useActivityRules();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -66,6 +69,20 @@ export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRules
     return result;
   };
 
+  const handleUpdateRule = async (ruleId: string, updates: {
+    location_id: string;
+    location_name: string;
+    activity: ActivityType;
+    min_gust: number;
+    max_gust: number;
+  }) => {
+    const result = await updateRule(ruleId, updates);
+    if (!result.error) {
+      onRulesChange?.();
+    }
+    return result;
+  };
+
   const handleDeleteRule = async (ruleId: string) => {
     const result = await deleteRule(ruleId);
     if (!result.error) {
@@ -75,79 +92,90 @@ export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRules
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Settings2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Aktivitetsregler</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Aktivitetsregler</SheetTitle>
-          <SheetDescription>
-            Definer regler for å få anbefalinger om aktivitet basert på vindforhold.
-          </SheetDescription>
-        </SheetHeader>
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Aktivitetsregler</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Aktivitetsregler</SheetTitle>
+            <SheetDescription>
+              Definer regler for å få anbefalinger om aktivitet basert på vindforhold.
+            </SheetDescription>
+          </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          {/* Info box */}
-          <div className="flex gap-3 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <p>
-              Regler sjekkes i prioritetsrekkefølge. Dra og slipp for å endre prioritet. 
-              Regelen øverst har høyest prioritet.
-            </p>
-          </div>
-
-          {/* Add new rule form */}
-          {locations.length > 0 ? (
-            <ActivityRuleForm locations={locations} onSubmit={handleAddRule} />
-          ) : (
-            <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
-              Legg til steder i dashboardet for å opprette regler.
+          <div className="mt-6 space-y-6">
+            {/* Info box */}
+            <div className="flex gap-3 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <p>
+                Regler sjekkes i prioritetsrekkefølge. Dra og slipp for å endre prioritet. 
+                Regelen øverst har høyest prioritet.
+              </p>
             </div>
-          )}
 
-          {/* Rules list */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Dine regler ({rules.length})
-            </h3>
-            
-            {loading ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                Laster...
-              </div>
-            ) : rules.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                Ingen regler ennå. Legg til din første regel ovenfor.
-              </div>
+            {/* Add new rule form */}
+            {locations.length > 0 ? (
+              <ActivityRuleForm locations={locations} onSubmit={handleAddRule} />
             ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={rules.map(r => r.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {rules.map(rule => (
-                      <ActivityRuleItem
-                        key={rule.id}
-                        rule={rule}
-                        onDelete={handleDeleteRule}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
+                Legg til steder i dashboardet for å opprette regler.
+              </div>
             )}
+
+            {/* Rules list */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Dine regler ({rules.length})
+              </h3>
+              
+              {loading ? (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  Laster...
+                </div>
+              ) : rules.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  Ingen regler ennå. Legg til din første regel ovenfor.
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={rules.map(r => r.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {rules.map(rule => (
+                        <ActivityRuleItem
+                          key={rule.id}
+                          rule={rule}
+                          onEdit={setEditingRule}
+                          onDelete={handleDeleteRule}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <ActivityRuleEditDialog
+        rule={editingRule}
+        locations={locations}
+        open={editingRule !== null}
+        onOpenChange={(open) => !open && setEditingRule(null)}
+        onSave={handleUpdateRule}
+      />
+    </>
   );
 };
