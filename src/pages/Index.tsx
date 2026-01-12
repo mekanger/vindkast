@@ -23,18 +23,33 @@ const Index = () => {
   // Load saved locations on mount
   useEffect(() => {
     if (authLoading || locationsLoading || initialLoadDone) return;
+    if (savedLocations.length === 0) {
+      setInitialLoadDone(true);
+      return;
+    }
 
     const loadSavedLocations = async () => {
-      for (const location of savedLocations) {
-        // Check if already loaded
-        if (locations.some(l => l.location.id === location.id)) continue;
-        
+      // Filter out locations that are already loaded
+      const locationsToLoad = savedLocations.filter(
+        loc => !locations.some(l => l.location.id === loc.id)
+      );
+
+      if (locationsToLoad.length === 0) {
+        setInitialLoadDone(true);
+        return;
+      }
+
+      for (const location of locationsToLoad) {
         const placeholderData: LocationWeather = {
           location,
           days: [],
         };
         
-        setLocations(prev => [...prev, placeholderData]);
+        setLocations(prev => {
+          // Double-check to prevent race conditions
+          if (prev.some(l => l.location.id === location.id)) return prev;
+          return [...prev, placeholderData];
+        });
         setLoadingIds(prev => new Set(prev).add(location.id));
 
         try {
@@ -57,7 +72,7 @@ const Index = () => {
     };
 
     loadSavedLocations();
-  }, [authLoading, locationsLoading, savedLocations, initialLoadDone, locations]);
+  }, [authLoading, locationsLoading, savedLocations, initialLoadDone]);
 
   // Reset initialLoadDone when user changes to reload saved locations
   useEffect(() => {

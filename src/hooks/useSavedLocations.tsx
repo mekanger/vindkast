@@ -59,8 +59,13 @@ export const useSavedLocations = () => {
   const saveLocation = useCallback(async (location: Location) => {
     if (!user) return { error: new Error('Not authenticated') };
 
+    // Check if already saved to prevent duplicates
+    if (savedLocations.some(loc => loc.id === location.id)) {
+      return { error: null }; // Already saved, no need to insert again
+    }
+
     try {
-      const { error } = await supabase.from('saved_locations').insert({
+      const { error } = await supabase.from('saved_locations').upsert({
         user_id: user.id,
         location_id: location.id,
         name: location.name,
@@ -68,17 +73,21 @@ export const useSavedLocations = () => {
         country: location.country || null,
         latitude: location.coordinates.lat,
         longitude: location.coordinates.lon,
-      });
+      }, { onConflict: 'user_id,location_id', ignoreDuplicates: true });
 
       if (error) throw error;
 
-      setSavedLocations(prev => [...prev, location]);
+      // Only add to local state if not already there
+      setSavedLocations(prev => {
+        if (prev.some(loc => loc.id === location.id)) return prev;
+        return [...prev, location];
+      });
       return { error: null };
     } catch (error) {
       console.error('Error saving location:', error);
       return { error: error as Error };
     }
-  }, [user]);
+  }, [user, savedLocations]);
 
   const removeLocation = useCallback(async (locationId: string) => {
     if (!user) return { error: new Error('Not authenticated') };
