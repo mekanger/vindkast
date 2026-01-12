@@ -36,12 +36,12 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!locationId || !activity || !minGust || !maxGust || !selectedLocation) return;
+    if (!locationId || !activity || minGust === '' || maxGust === '' || !selectedLocation) return;
 
     const minGustNum = parseFloat(minGust);
     const maxGustNum = parseFloat(maxGust);
 
-    if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum > maxGustNum) return;
+    if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum < 0 || maxGustNum < 0 || minGustNum > maxGustNum) return;
 
     setIsSubmitting(true);
     
@@ -64,8 +64,9 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
     }
   };
 
-  const isValid = locationId && activity && minGust && maxGust && 
+  const isValid = locationId && activity && minGust !== '' && maxGust !== '' && 
     !isNaN(parseFloat(minGust)) && !isNaN(parseFloat(maxGust)) &&
+    parseFloat(minGust) >= 0 && parseFloat(maxGust) >= 0 &&
     parseFloat(minGust) <= parseFloat(maxGust);
 
   return (
