@@ -21,7 +21,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { savedLocations, loading: locationsLoading, saveLocation, removeLocation } = useSavedLocations();
-  const { rules: activityRules } = useActivityRules();
+  const { rules: activityRules, refetch: refetchRules } = useActivityRules();
 
   // Load saved locations on mount
   useEffect(() => {
@@ -207,7 +207,7 @@ const Index = () => {
                 existingLocationIds={existingLocationIds}
               />
               {user && (
-                <ActivityRulesManager locations={availableLocations} />
+                <ActivityRulesManager locations={availableLocations} onRulesChange={refetchRules} />
               )}
               <div className="hidden md:block">
                 {user ? (
