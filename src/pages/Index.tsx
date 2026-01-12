@@ -149,14 +149,17 @@ const Index = () => {
     }
   }, [user, removeLocation]);
 
-  // Get unique dates across all locations (next 3 days)
+  // Generate dates for next 3 days (based on current date, not weather data)
   const dayDates = useMemo(() => {
-    const allDates = new Set<string>();
-    locations.forEach(loc => {
-      loc.days.forEach(day => allDates.add(day.date));
-    });
-    return Array.from(allDates).sort().slice(0, 3);
-  }, [locations]);
+    const dates: string[] = [];
+    const today = new Date();
+    for (let i = 0; i < 3; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  }, []);
 
   // Prepare data for each day section
   const daySections = useMemo(() => {
