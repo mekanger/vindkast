@@ -1,6 +1,6 @@
-# VindVarsel 🌬️
+# Vindkast 🌬️
 
-En moderne webapp for å vise vindmeldinger fra yr.no for utvalgte steder i Norge.
+En moderne webapp for vindsportentusiaster som viser vindmeldinger fra yr.no med aktivitetsanbefalinger.
 
 ## Funksjonalitet
 
