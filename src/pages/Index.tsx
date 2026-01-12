@@ -77,9 +77,14 @@ const Index = () => {
     loadSavedLocations();
   }, [authLoading, locationsLoading, savedLocations, initialLoadDone]);
 
-  // Reset initialLoadDone when user changes to reload saved locations
+  // Reset state when user changes (e.g., logout or account deletion)
   useEffect(() => {
     setInitialLoadDone(false);
+    // Clear locations when user logs out or is deleted
+    if (!user) {
+      setLocations([]);
+      setLoadingIds(new Set());
+    }
   }, [user]);
 
   const handleLocationSelect = useCallback(async (location: Location) => {
