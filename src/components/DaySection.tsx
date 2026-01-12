@@ -107,7 +107,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
           return (
             <Card 
               key={location.id} 
-              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 group min-w-0"
+              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group min-w-0"
             >
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-start justify-between">
