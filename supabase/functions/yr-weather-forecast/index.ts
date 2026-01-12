@@ -135,8 +135,8 @@ serve(async (req) => {
       console.log('Ocean forecast fetch failed (location likely inland):', oceanError);
     }
 
-    // Get target hours: 10, 12, 14, 16
-    const targetHours = [10, 12, 14, 16];
+    // Get target hours: 10, 12, 14, 16, 18, 20
+    const targetHours = [10, 12, 14, 16, 18, 20];
     
     // Get the next 3 days
     const now = new Date();
