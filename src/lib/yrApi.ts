@@ -55,10 +55,6 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
 
   // Transform API response to our format
   const days: DayForecast[] = (data?.days || []).map((day: any) => {
-    const date = new Date(day.date);
-    const dayName = date.toLocaleDateString('nb-NO', { weekday: 'long' });
-    const formattedDate = date.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
-
     const forecasts: WindForecast[] = day.forecasts.map((fc: any) => ({
       hour: fc.hour,
       windSpeed: Math.round(fc.windSpeed * 10) / 10,
@@ -69,7 +65,7 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
     }));
 
     return {
-      date: `${dayName.charAt(0).toUpperCase() + dayName.slice(1)}, ${formattedDate}`,
+      date: day.date, // Keep as ISO format (YYYY-MM-DD) for matching
       forecasts,
     };
   });
