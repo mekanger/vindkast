@@ -57,22 +57,24 @@ const getDisplayHours = (dateStr: string): number[] => {
 const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: string; isoDate: string } => {
   try {
     const date = parseISO(dateStr);
+    
+    // Compare using ISO date strings to avoid timezone issues
     const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
     
-    const isTodayDate = date.toDateString() === today.toDateString();
-    const isTomorrow = date.toDateString() === tomorrow.toDateString();
-    
-    if (isTodayDate) {
-      return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: format(date, "yyyy-MM-dd") };
-    } else if (isTomorrow) {
-      return { dayName: "I morgen", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: format(date, "yyyy-MM-dd") };
+    if (dateStr === todayStr) {
+      return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: dateStr };
+    } else if (dateStr === tomorrowStr) {
+      return { dayName: "I morgen", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: dateStr };
     } else {
       return { 
         dayName: format(date, "EEEE", { locale: nb }), 
         dateFormatted: format(date, "d. MMMM", { locale: nb }),
-        isoDate: format(date, "yyyy-MM-dd")
+        isoDate: dateStr
       };
     }
   } catch {
