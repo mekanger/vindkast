@@ -123,6 +123,25 @@ export const useActivityRules = () => {
     }
   }, [user]);
 
+  const deleteRulesForLocation = useCallback(async (locationId: string) => {
+    if (!user) return { error: new Error('Not authenticated') };
+
+    try {
+      const { error } = await supabase
+        .from('activity_rules')
+        .delete()
+        .eq('location_id', locationId);
+
+      if (error) throw error;
+
+      setRules(prev => prev.filter(r => r.location_id !== locationId));
+      return { error: null };
+    } catch (error) {
+      console.error('Error deleting rules for location:', error);
+      return { error: error as Error };
+    }
+  }, [user]);
+
   const updatePriorities = useCallback(async (orderedIds: string[]) => {
     if (!user) return { error: new Error('Not authenticated') };
 
@@ -165,6 +184,7 @@ export const useActivityRules = () => {
     addRule,
     updateRule,
     deleteRule,
+    deleteRulesForLocation,
     updatePriorities,
     refetch: fetchRules,
   };
