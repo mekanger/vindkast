@@ -59,6 +59,31 @@ export function findMatchingActivity(
 }
 
 /**
+ * Find all unique matching activities for a specific location
+ * Returns an array of unique activity types that match the forecast
+ */
+export function findAllMatchingActivities(
+  rules: ActivityRule[],
+  locationId: string,
+  forecast: DayForecast | undefined
+): ActivityType[] {
+  if (!forecast) return [];
+  
+  const matchingActivities = new Set<ActivityType>();
+  
+  for (const rule of rules) {
+    if (
+      rule.location_id === locationId &&
+      hasMatchingGustInRange(forecast, rule.min_gust, rule.max_gust)
+    ) {
+      matchingActivities.add(rule.activity);
+    }
+  }
+  
+  return Array.from(matchingActivities);
+}
+
+/**
  * Find the best activity for a day across all locations
  * Returns the first matching rule (highest priority) with its location
  * A rule matches if ANY of the display hours has a gust within the rule's range

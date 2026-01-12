@@ -6,13 +6,14 @@ import { WindSpeedBadge } from "./WindSpeedBadge";
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { WaveBadge } from "./WaveBadge";
 import { DailyActivityBadge } from "./DailyActivityBadge";
+import { LocationActivityBadges } from "./LocationActivityBadges";
 import { X } from "lucide-react";
 import type { DayForecast, Location } from "@/types/weather";
-import type { ActivityRule } from "@/types/activity";
-import { findDailyActivity } from "@/lib/activityMatcher";
+import type { ActivityRule, ActivityType } from "@/types/activity";
+import { findDailyActivity, findAllMatchingActivities } from "@/lib/activityMatcher";
 import { format, parseISO, isToday } from "date-fns";
 import { nb } from "date-fns/locale";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { convertWindSpeed, getWindUnitLabel } from "@/types/settings";
 
@@ -56,6 +57,16 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
     return findDailyActivity(activityRules, locationsWithForecasts);
   }, [activityRules, locationsWithForecasts]);
 
+  // Calculate matching activities for each location
+  const locationActivities = useMemo(() => {
+    const map = new Map<string, ActivityType[]>();
+    for (const { location, forecast } of locationsWithForecasts) {
+      const activities = findAllMatchingActivities(activityRules, location.id, forecast);
+      map.set(location.id, activities);
+    }
+    return map;
+  }, [activityRules, locationsWithForecasts]);
+
   return (
     <section className="space-y-4">
       {/* Day Header */}
@@ -79,11 +90,14 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
 
       {/* Locations for this day */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {locationsWithForecasts.map(({ location, forecast, isLoading }) => (
-          <Card 
-            key={location.id} 
-            className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group"
-          >
+        {locationsWithForecasts.map(({ location, forecast, isLoading }) => {
+          const matchingActivities = locationActivities.get(location.id) || [];
+          
+          return (
+            <Card 
+              key={location.id} 
+              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group"
+            >
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
@@ -104,6 +118,9 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                   <X className="w-3 h-3" />
                 </Button>
               </div>
+              
+              {/* Activity badges for this location */}
+              <LocationActivityBadges activities={matchingActivities} />
             </CardHeader>
             <CardContent className="pt-0 pb-4 px-4">
               {isLoading ? (
@@ -211,7 +228,8 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
               )}
             </CardContent>
           </Card>
-        ))}
+        );
+        })}
       </div>
     </section>
   );
