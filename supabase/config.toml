@@ -1,1 +1,10 @@
 project_id = "tjnqklvzvyaxzvbnksjq"
+
+[functions.yr-location-search]
+verify_jwt = false
+
+[functions.yr-weather-forecast]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
