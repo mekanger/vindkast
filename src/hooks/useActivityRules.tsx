@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import type { ActivityRule, ActivityType } from '@/types/activity';
+import type { ActivityRule, ActivityType, WindDirection } from '@/types/activity';
 
 export const useActivityRules = () => {
   const { user } = useAuth();
@@ -41,6 +41,7 @@ export const useActivityRules = () => {
     activity: ActivityType;
     min_gust: number;
     max_gust: number;
+    wind_directions?: WindDirection[] | null;
   }) => {
     if (!user) return { error: new Error('Not authenticated') };
 
@@ -60,6 +61,7 @@ export const useActivityRules = () => {
           min_gust: rule.min_gust,
           max_gust: rule.max_gust,
           priority: minPriority,
+          wind_directions: rule.wind_directions || null,
         })
         .select()
         .single();
@@ -80,6 +82,7 @@ export const useActivityRules = () => {
     activity?: ActivityType;
     min_gust?: number;
     max_gust?: number;
+    wind_directions?: WindDirection[] | null;
   }) => {
     if (!user) return { error: new Error('Not authenticated') };
 

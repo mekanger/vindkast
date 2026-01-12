@@ -25,6 +25,7 @@ export type Database = {
           min_gust: number
           priority: number
           user_id: string
+          wind_directions: string[] | null
         }
         Insert: {
           activity: string
@@ -36,6 +37,7 @@ export type Database = {
           min_gust: number
           priority?: number
           user_id: string
+          wind_directions?: string[] | null
         }
         Update: {
           activity?: string
@@ -47,6 +49,7 @@ export type Database = {
           min_gust?: number
           priority?: number
           user_id?: string
+          wind_directions?: string[] | null
         }
         Relationships: []
       }

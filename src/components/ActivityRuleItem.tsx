@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ActivityRule } from '@/types/activity';
-import { ACTIVITY_LABELS } from '@/types/activity';
+import { ACTIVITY_LABELS, WIND_DIRECTION_LABELS } from '@/types/activity';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { convertWindSpeed, getWindUnitLabel } from '@/types/settings';
 
@@ -72,6 +72,9 @@ export const ActivityRuleItem = ({ rule, onEdit, onDelete }: ActivityRuleItemPro
         </p>
         <p className="text-sm text-muted-foreground truncate">
           {rule.location_name} • {minDisplay}-{maxDisplay} {unitLabel}
+          {rule.wind_directions && rule.wind_directions.length > 0 && (
+            <span> • {rule.wind_directions.map(d => WIND_DIRECTION_LABELS[d]).join(', ')}</span>
+          )}
         </p>
       </div>
 
