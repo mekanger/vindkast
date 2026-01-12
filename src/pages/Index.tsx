@@ -59,13 +59,10 @@ const Index = () => {
     loadSavedLocations();
   }, [authLoading, locationsLoading, savedLocations, initialLoadDone, locations]);
 
-  // Reset when user logs out
+  // Reset initialLoadDone when user changes to reload saved locations
   useEffect(() => {
-    if (!user && !authLoading) {
-      setLocations([]);
-      setInitialLoadDone(false);
-    }
-  }, [user, authLoading]);
+    setInitialLoadDone(false);
+  }, [user]);
 
   const handleLocationSelect = useCallback(async (location: Location) => {
     // Add location immediately with empty days (shows loading state)

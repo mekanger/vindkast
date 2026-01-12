@@ -27,9 +27,6 @@ export async function searchLocations(query: string): Promise<YrLocation[]> {
 
   if (error) {
     console.error('Error searching locations:', error);
-    if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
-      throw new Error('Du må være logget inn for å søke etter steder');
-    }
     throw new Error('Kunne ikke søke etter steder');
   }
 
@@ -53,9 +50,6 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
 
   if (error) {
     console.error('Error fetching weather:', error);
-    if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
-      throw new Error('Du må være logget inn for å hente værmelding');
-    }
     throw new Error('Kunne ikke hente værmelding');
   }
 
