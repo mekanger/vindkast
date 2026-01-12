@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      location_search_cache: {
+        Row: {
+          cached_at: string
+          expires_at: string
+          id: string
+          query_key: string
+          response_data: Json
+        }
+        Insert: {
+          cached_at?: string
+          expires_at: string
+          id?: string
+          query_key: string
+          response_data: Json
+        }
+        Update: {
+          cached_at?: string
+          expires_at?: string
+          id?: string
+          query_key?: string
+          response_data?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -77,6 +101,30 @@ export type Database = {
           name?: string
           region?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      weather_cache: {
+        Row: {
+          cache_key: string
+          cached_at: string
+          expires_at: string
+          id: string
+          response_data: Json
+        }
+        Insert: {
+          cache_key: string
+          cached_at?: string
+          expires_at: string
+          id?: string
+          response_data: Json
+        }
+        Update: {
+          cache_key?: string
+          cached_at?: string
+          expires_at?: string
+          id?: string
+          response_data?: Json
         }
         Relationships: []
       }

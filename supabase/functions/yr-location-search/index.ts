@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const CACHE_TTL_MINUTES = 60; // 1 hour cache
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,7 +33,32 @@ serve(async (req) => {
       );
     }
 
-    console.log('Searching for location:', query);
+    // Normalize query for cache key (lowercase, trimmed)
+    const normalizedQuery = query.toLowerCase().trim();
+    const cacheKey = `search_${normalizedQuery}`;
+
+    // Initialize Supabase client for cache operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Check cache first
+    const { data: cachedData, error: cacheError } = await supabase
+      .from('location_search_cache')
+      .select('response_data, expires_at')
+      .eq('query_key', cacheKey)
+      .maybeSingle();
+
+    if (!cacheError && cachedData && new Date(cachedData.expires_at) > new Date()) {
+      console.log('Cache hit for search:', normalizedQuery);
+      return new Response(
+        JSON.stringify(cachedData.response_data),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' } }
+      );
+    }
+
+    console.log('Cache miss - searching for location:', query);
 
     // Yr.no uses a typeahead API for location search
     const searchUrl = `https://www.yr.no/api/v0/locations/Search?q=${encodeURIComponent(query)}&language=nb`;
@@ -61,9 +89,29 @@ serve(async (req) => {
       },
     }));
 
+    const result = { locations };
+
+    // Store in cache
+    const expiresAt = new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString();
+    
+    const { error: upsertError } = await supabase
+      .from('location_search_cache')
+      .upsert({
+        query_key: cacheKey,
+        response_data: result,
+        cached_at: new Date().toISOString(),
+        expires_at: expiresAt,
+      }, { onConflict: 'query_key' });
+
+    if (upsertError) {
+      console.error('Error caching search results:', upsertError);
+    } else {
+      console.log('Cached search results for:', normalizedQuery, 'expires:', expiresAt);
+    }
+
     return new Response(
-      JSON.stringify({ locations }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' } }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
