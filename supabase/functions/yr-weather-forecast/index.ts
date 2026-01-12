@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const CACHE_TTL_MINUTES = 60; // 1 hour cache
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -46,7 +49,33 @@ serve(async (req) => {
       );
     }
 
-    console.log('Fetching weather for:', lat, lon);
+    // Round coordinates to 2 decimal places for cache key (about 1km precision)
+    const roundedLat = Math.round(lat * 100) / 100;
+    const roundedLon = Math.round(lon * 100) / 100;
+    const cacheKey = `weather_${roundedLat}_${roundedLon}`;
+
+    // Initialize Supabase client for cache operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Check cache first
+    const { data: cachedData, error: cacheError } = await supabase
+      .from('weather_cache')
+      .select('response_data, expires_at')
+      .eq('cache_key', cacheKey)
+      .maybeSingle();
+
+    if (!cacheError && cachedData && new Date(cachedData.expires_at) > new Date()) {
+      console.log('Cache hit for:', cacheKey);
+      return new Response(
+        JSON.stringify(cachedData.response_data),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' } }
+      );
+    }
+
+    console.log('Cache miss for:', cacheKey, '- fetching from yr.no');
 
     // Yr.no Locationforecast API (free, requires User-Agent)
     const forecastUrl = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
@@ -127,11 +156,31 @@ serve(async (req) => {
       });
     }
 
+    const result = { days };
+
+    // Store in cache
+    const expiresAt = new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString();
+    
+    const { error: upsertError } = await supabase
+      .from('weather_cache')
+      .upsert({
+        cache_key: cacheKey,
+        response_data: result,
+        cached_at: new Date().toISOString(),
+        expires_at: expiresAt,
+      }, { onConflict: 'cache_key' });
+
+    if (upsertError) {
+      console.error('Error caching weather data:', upsertError);
+    } else {
+      console.log('Cached weather data for:', cacheKey, 'expires:', expiresAt);
+    }
+
     console.log('Processed forecast for', days.length, 'days');
 
     return new Response(
-      JSON.stringify({ days }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' } }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
