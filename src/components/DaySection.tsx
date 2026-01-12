@@ -12,6 +12,8 @@ import { findDailyActivity } from "@/lib/activityMatcher";
 import { format, parseISO } from "date-fns";
 import { nb } from "date-fns/locale";
 import { useMemo } from "react";
+import { useUserSettings } from "@/hooks/useUserSettings";
+import { convertWindSpeed, getWindUnitLabel } from "@/types/settings";
 
 interface DaySectionProps {
   date: string;
@@ -53,6 +55,8 @@ const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: st
 
 export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, activityRules = [] }: DaySectionProps) => {
   const { dayName, dateFormatted } = formatDateHeader(date);
+  const { windUnit } = useUserSettings();
+  const unitLabel = getWindUnitLabel(windUnit);
 
   // Find the recommended activity for this day
   const dailyActivity = useMemo(() => {
@@ -130,15 +134,15 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                     
                     {/* Wind row */}
                     <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 sm:gap-2 items-center mb-1">
-                      <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vindkast<br /><span className="font-normal">(m/s)</span></div>
+                      <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vindkast<br /><span className="font-normal">({unitLabel})</span></div>
                       {DISPLAY_HOURS.map((hour) => {
                         const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                         return (
                           <div key={hour} className="flex flex-col items-center gap-0.5">
                             {hourForecast ? (
                               <>
-                                <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" />
-                                <span className="text-[10px] text-muted-foreground">({hourForecast.windSpeed.toFixed(0)})</span>
+                                <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" unit={windUnit} />
+                                <span className="text-[10px] text-muted-foreground">({convertWindSpeed(hourForecast.windSpeed, windUnit).toFixed(0)})</span>
                                 <WindDirectionIcon 
                                   direction={hourForecast.windDirection} 
                                   className="w-3 h-3 text-muted-foreground"
