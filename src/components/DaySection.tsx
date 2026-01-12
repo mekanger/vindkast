@@ -100,14 +100,14 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
       )}
 
       {/* Locations for this day */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3">
         {locationsWithForecasts.map(({ location, forecast, isLoading }) => {
           const matchingActivities = locationActivities.get(location.id) || [];
           
           return (
             <Card 
               key={location.id} 
-              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group"
+              className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 group min-w-0"
             >
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-start justify-between">
@@ -140,8 +140,8 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                   <span className="text-sm">Henter...</span>
                 </div>
               ) : forecast ? (
-                <div className="mt-2">
-                  <div>
+                <div className="mt-2 overflow-x-auto">
+                  <div className="min-w-[280px]">
                     {/* Header row with hours */}
                     <div className={`grid gap-1 sm:gap-2 mb-2`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                       <div className="w-12 sm:w-16"></div>
