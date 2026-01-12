@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Wind, LogIn } from "lucide-react";
 import { LocationSearch } from "@/components/LocationSearch";
-import { LocationCard } from "@/components/LocationCard";
+import { DaySection } from "@/components/DaySection";
 import { EmptyState } from "@/components/EmptyState";
 import { UserMenu } from "@/components/UserMenu";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,7 @@ const Index = () => {
         return next;
       });
     }
-  }, [toast, user, saveLocation, removeLocation]);
+  }, [locations, toast, user, saveLocation, removeLocation]);
 
   const handleRemoveLocation = useCallback(async (id: string) => {
     setLocations(prev => prev.filter(loc => loc.location.id !== id));
@@ -130,6 +130,27 @@ const Index = () => {
       }
     }
   }, [user, removeLocation]);
+
+  // Get unique dates across all locations (next 3 days)
+  const dayDates = useMemo(() => {
+    const allDates = new Set<string>();
+    locations.forEach(loc => {
+      loc.days.forEach(day => allDates.add(day.date));
+    });
+    return Array.from(allDates).sort().slice(0, 3);
+  }, [locations]);
+
+  // Prepare data for each day section
+  const daySections = useMemo(() => {
+    return dayDates.map(date => ({
+      date,
+      locationsWithForecasts: locations.map(loc => ({
+        location: loc.location,
+        forecast: loc.days.find(d => d.date === date),
+        isLoading: loadingIds.has(loc.location.id),
+      })),
+    }));
+  }, [dayDates, locations, loadingIds]);
 
   const existingLocationIds = locations.map(loc => loc.location.id);
 
@@ -188,13 +209,13 @@ const Index = () => {
         {locations.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-            {locations.map((data) => (
-              <LocationCard
-                key={data.location.id}
-                data={data}
-                onRemove={handleRemoveLocation}
-                isLoading={loadingIds.has(data.location.id)}
+          <div className="space-y-10">
+            {daySections.map((section) => (
+              <DaySection
+                key={section.date}
+                date={section.date}
+                locationsWithForecasts={section.locationsWithForecasts}
+                onRemoveLocation={handleRemoveLocation}
               />
             ))}
           </div>
