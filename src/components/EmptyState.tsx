@@ -15,7 +15,10 @@ export const EmptyState = () => {
         Ingen steder lagt til
       </h3>
       <p className="text-muted-foreground max-w-md">
-        Søk etter et sted ovenfor for å se vindmeldinger for de neste 3 dagene.
+        Søk etter et sted ovenfor for å se værmelding for de neste 3 dagene.
+      </p>
+      <p className="text-muted-foreground max-w-md mt-2">
+        Du må logge deg inn for å kunne lagre stedene dine.
       </p>
     </div>
   );
