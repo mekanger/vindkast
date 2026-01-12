@@ -28,7 +28,7 @@ interface DaySectionProps {
   activityRules?: ActivityRule[];
 }
 
-const ALL_DISPLAY_HOURS = [10, 12, 14, 16, 18, 20];
+const ALL_DISPLAY_HOURS = [10, 12, 14, 16, 18];
 
 const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: string; isoDate: string } => {
   try {
