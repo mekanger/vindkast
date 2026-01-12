@@ -81,25 +81,11 @@ const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: st
   try {
     const date = parseISO(dateStr);
     
-    // Compare using local date strings to avoid timezone issues
-    const today = new Date();
-    const todayStr = getLocalDateStr(today);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = getLocalDateStr(tomorrow);
-    
-    if (dateStr === todayStr) {
-      return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: dateStr };
-    } else if (dateStr === tomorrowStr) {
-      return { dayName: "I morgen", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: dateStr };
-    } else {
-      return { 
-        dayName: format(date, "EEEE", { locale: nb }), 
-        dateFormatted: format(date, "d. MMMM", { locale: nb }),
-        isoDate: dateStr
-      };
-    }
+    return { 
+      dayName: format(date, "EEEE", { locale: nb }), 
+      dateFormatted: format(date, "d. MMMM", { locale: nb }),
+      isoDate: dateStr
+    };
   } catch {
     return { dayName: dateStr, dateFormatted: "", isoDate: "" };
   }
