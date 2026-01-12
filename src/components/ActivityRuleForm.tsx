@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ACTIVITY_OPTIONS, type ActivityType } from '@/types/activity';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ACTIVITY_OPTIONS, WIND_DIRECTION_OPTIONS, type ActivityType, type WindDirection } from '@/types/activity';
 import type { Location } from '@/types/weather';
 import { Plus } from 'lucide-react';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -23,6 +24,7 @@ interface ActivityRuleFormProps {
     activity: ActivityType;
     min_gust: number;
     max_gust: number;
+    wind_directions?: WindDirection[] | null;
   }) => Promise<{ error: Error | null }>;
 }
 
@@ -32,10 +34,19 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
   const [activity, setActivity] = useState<ActivityType | ''>('');
   const [minGust, setMinGust] = useState<string>('');
   const [maxGust, setMaxGust] = useState<string>('');
+  const [windDirections, setWindDirections] = useState<WindDirection[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedLocation = locations.find(l => l.id === locationId);
   const unitLabel = getWindUnitLabel(windUnit);
+
+  const toggleWindDirection = (direction: WindDirection) => {
+    setWindDirections(prev => 
+      prev.includes(direction)
+        ? prev.filter(d => d !== direction)
+        : [...prev, direction]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +70,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
       activity: activity as ActivityType,
       min_gust: minGustMs,
       max_gust: maxGustMs,
+      wind_directions: windDirections.length > 0 ? windDirections : null,
     });
 
     setIsSubmitting(false);
@@ -69,6 +81,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
       setActivity('');
       setMinGust('');
       setMaxGust('');
+      setWindDirections([]);
     }
   };
 
@@ -145,6 +158,29 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
             className="mt-1"
           />
         </div>
+
+        <div className="col-span-2">
+          <Label className="text-sm font-medium mb-2 block">
+            Vindretning (valgfritt)
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {WIND_DIRECTION_OPTIONS.map(option => (
+              <label
+                key={option.value}
+                className="flex items-center gap-1.5 cursor-pointer"
+              >
+                <Checkbox
+                  checked={windDirections.includes(option.value)}
+                  onCheckedChange={() => toggleWindDirection(option.value)}
+                />
+                <span className="text-sm">{option.label}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Hvis ingen er valgt, matcher regelen alle vindretninger
+          </p>
+        </div>
       </div>
 
       <Button 
@@ -153,7 +189,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
         className="w-full"
       >
         <Plus className="w-4 h-4 mr-2" />
-        Legg til regel
+        Legg til aktivitet
       </Button>
     </form>
   );

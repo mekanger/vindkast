@@ -1,5 +1,7 @@
 export type ActivityType = 'windsurfing' | 'windfoil' | 'wingfoil' | 'sup-foil';
 
+export type WindDirection = 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW';
+
 export interface ActivityRule {
   id: string;
   user_id: string;
@@ -10,6 +12,7 @@ export interface ActivityRule {
   max_gust: number;
   priority: number;
   created_at: string;
+  wind_directions: WindDirection[] | null;
 }
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {
@@ -25,3 +28,25 @@ export const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: 'wingfoil', label: 'Wingfoil' },
   { value: 'sup-foil', label: 'SUP-foil' },
 ];
+
+export const WIND_DIRECTION_OPTIONS: { value: WindDirection; label: string }[] = [
+  { value: 'N', label: 'Nord' },
+  { value: 'NE', label: 'Nord-øst' },
+  { value: 'E', label: 'Øst' },
+  { value: 'SE', label: 'Sør-øst' },
+  { value: 'S', label: 'Sør' },
+  { value: 'SW', label: 'Sør-vest' },
+  { value: 'W', label: 'Vest' },
+  { value: 'NW', label: 'Nord-vest' },
+];
+
+export const WIND_DIRECTION_LABELS: Record<WindDirection, string> = {
+  'N': 'N',
+  'NE': 'NØ',
+  'E': 'Ø',
+  'SE': 'SØ',
+  'S': 'S',
+  'SW': 'SV',
+  'W': 'V',
+  'NW': 'NV',
+};

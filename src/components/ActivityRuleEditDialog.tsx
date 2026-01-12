@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ACTIVITY_OPTIONS, type ActivityType, type ActivityRule } from '@/types/activity';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ACTIVITY_OPTIONS, WIND_DIRECTION_OPTIONS, type ActivityType, type ActivityRule, type WindDirection } from '@/types/activity';
 import type { Location } from '@/types/weather';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { getWindUnitLabel, convertWindSpeed, MS_TO_KNOTS } from '@/types/settings';
@@ -31,6 +32,7 @@ interface ActivityRuleEditDialogProps {
     activity: ActivityType;
     min_gust: number;
     max_gust: number;
+    wind_directions?: WindDirection[] | null;
   }) => Promise<{ error: Error | null }>;
 }
 
@@ -46,6 +48,7 @@ export const ActivityRuleEditDialog = ({
   const [activity, setActivity] = useState<ActivityType | ''>('');
   const [minGust, setMinGust] = useState<string>('');
   const [maxGust, setMaxGust] = useState<string>('');
+  const [windDirections, setWindDirections] = useState<WindDirection[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unitLabel = getWindUnitLabel(windUnit);
@@ -60,10 +63,19 @@ export const ActivityRuleEditDialog = ({
       const maxDisplay = Math.round(convertWindSpeed(rule.max_gust, windUnit));
       setMinGust(minDisplay.toString());
       setMaxGust(maxDisplay.toString());
+      setWindDirections(rule.wind_directions || []);
     }
   }, [rule, windUnit]);
 
   const selectedLocation = locations.find(l => l.id === locationId);
+
+  const toggleWindDirection = (direction: WindDirection) => {
+    setWindDirections(prev => 
+      prev.includes(direction)
+        ? prev.filter(d => d !== direction)
+        : [...prev, direction]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +99,7 @@ export const ActivityRuleEditDialog = ({
       activity: activity as ActivityType,
       min_gust: minGustMs,
       max_gust: maxGustMs,
+      wind_directions: windDirections.length > 0 ? windDirections : null,
     });
 
     setIsSubmitting(false);
@@ -105,7 +118,7 @@ export const ActivityRuleEditDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rediger regel</DialogTitle>
+          <DialogTitle>Rediger aktivitet</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -178,6 +191,29 @@ export const ActivityRuleEditDialog = ({
                   className="mt-1"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                Vindretning (valgfritt)
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {WIND_DIRECTION_OPTIONS.map(option => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={windDirections.includes(option.value)}
+                      onCheckedChange={() => toggleWindDirection(option.value)}
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Hvis ingen er valgt, matcher regelen alle vindretninger
+              </p>
             </div>
           </div>
 
