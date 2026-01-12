@@ -5,11 +5,13 @@ import { LocationSearch } from "@/components/LocationSearch";
 import { DaySection } from "@/components/DaySection";
 import { EmptyState } from "@/components/EmptyState";
 import { UserMenu } from "@/components/UserMenu";
+import { ActivityRulesManager } from "@/components/ActivityRulesManager";
 import { Button } from "@/components/ui/button";
 import { fetchWeatherForecast } from "@/lib/yrApi";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedLocations } from "@/hooks/useSavedLocations";
+import { useActivityRules } from "@/hooks/useActivityRules";
 import type { Location, LocationWeather } from "@/types/weather";
 
 const Index = () => {
@@ -19,6 +21,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { savedLocations, loading: locationsLoading, saveLocation, removeLocation } = useSavedLocations();
+  const { rules: activityRules } = useActivityRules();
 
   // Load saved locations on mount
   useEffect(() => {
@@ -168,6 +171,7 @@ const Index = () => {
   }, [dayDates, locations, loadingIds]);
 
   const existingLocationIds = locations.map(loc => loc.location.id);
+  const availableLocations = locations.map(loc => loc.location);
 
   return (
     <div className="min-h-screen gradient-sky">
@@ -197,11 +201,14 @@ const Index = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <LocationSearch 
                 onLocationSelect={handleLocationSelect}
                 existingLocationIds={existingLocationIds}
               />
+              {user && (
+                <ActivityRulesManager locations={availableLocations} />
+              )}
               <div className="hidden md:block">
                 {user ? (
                   <UserMenu />
@@ -231,6 +238,7 @@ const Index = () => {
                 date={section.date}
                 locationsWithForecasts={section.locationsWithForecasts}
                 onRemoveLocation={handleRemoveLocation}
+                activityRules={activityRules}
               />
             ))}
           </div>

@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
-
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
+import { DailyActivityBadge } from "./DailyActivityBadge";
 import { X } from "lucide-react";
-import type { LocationWeather, DayForecast, Location } from "@/types/weather";
+import type { DayForecast, Location } from "@/types/weather";
+import type { ActivityRule } from "@/types/activity";
+import { findDailyActivity } from "@/lib/activityMatcher";
 import { format, parseISO } from "date-fns";
 import { nb } from "date-fns/locale";
+import { useMemo } from "react";
 
 interface DaySectionProps {
   date: string;
@@ -18,6 +21,7 @@ interface DaySectionProps {
     isLoading: boolean;
   }[];
   onRemoveLocation: (id: string) => void;
+  activityRules?: ActivityRule[];
 }
 
 const DISPLAY_HOURS = [10, 12, 14, 16];
@@ -47,11 +51,35 @@ const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: st
   }
 };
 
-export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: DaySectionProps) => {
+export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, activityRules = [] }: DaySectionProps) => {
   const { dayName, dateFormatted } = formatDateHeader(date);
+
+  // Find the recommended activity for this day
+  const dailyActivity = useMemo(() => {
+    if (activityRules.length === 0) return null;
+    return findDailyActivity(activityRules, locationsWithForecasts);
+  }, [activityRules, locationsWithForecasts]);
 
   return (
     <section className="space-y-4">
+      {/* Day Header */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="p-2 rounded-xl gradient-wind shadow-soft">
+          <Calendar className="w-5 h-5 text-primary-foreground" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-foreground capitalize">{dayName}</h2>
+          <p className="text-sm text-muted-foreground capitalize">{dateFormatted}</p>
+        </div>
+      </div>
+
+      {/* Daily Activity Recommendation */}
+      {dailyActivity && (
+        <DailyActivityBadge 
+          activity={dailyActivity.activity} 
+          locationName={dailyActivity.locationName} 
+        />
+      )}
       {/* Day Header */}
       <div className="flex items-center gap-3 px-1">
         <div className="p-2 rounded-xl gradient-wind shadow-soft">
