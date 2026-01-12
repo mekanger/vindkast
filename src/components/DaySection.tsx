@@ -113,7 +113,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                   variant="ghost"
                   size="icon"
                   onClick={() => onRemoveLocation(location.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
                 >
                   <X className="w-3 h-3" />
                 </Button>
