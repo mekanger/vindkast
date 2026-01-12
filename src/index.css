@@ -36,11 +36,13 @@
 
     --radius: 1rem;
 
-    /* Custom weather tokens */
-    --wind-light: 195 100% 85%;
-    --wind-medium: 195 85% 65%;
-    --wind-strong: 210 90% 55%;
-    --wind-extreme: 220 85% 45%;
+    /* Custom weather tokens - gust-based color scale (0 = light blue, 25+ = dark purple) */
+    --wind-0: 195 100% 85%;
+    --wind-5: 200 90% 75%;
+    --wind-10: 220 80% 65%;
+    --wind-15: 250 70% 55%;
+    --wind-20: 270 65% 45%;
+    --wind-25: 280 60% 35%;
     
     --gradient-sky: linear-gradient(135deg, hsl(200 90% 95%) 0%, hsl(210 80% 90%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 30% 98%) 100%);
