@@ -16,7 +16,10 @@ const allowedOrigins = [
 function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin') || '';
   const isAllowed = allowedOrigins.some(allowed => 
-    origin === allowed || origin.endsWith('.lovable.app') || origin.endsWith('.gptengineer.run')
+    origin === allowed || 
+    origin.endsWith('.lovable.app') || 
+    origin.endsWith('.lovableproject.com') ||
+    origin.endsWith('.gptengineer.run')
   );
   
   return {
