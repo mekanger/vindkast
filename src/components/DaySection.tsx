@@ -112,7 +112,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                     
                     {/* Wind row */}
                     <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 sm:gap-2 items-center mb-1">
-                      <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vind<br /><span className="font-normal">(m/s)</span></div>
+                      <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vindkast<br /><span className="font-normal">(m/s)</span></div>
                       {DISPLAY_HOURS.map((hour) => {
                         const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                         return (
