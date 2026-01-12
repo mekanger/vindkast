@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
-import { GustBadge } from "./GustBadge";
+
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { X } from "lucide-react";
 import type { LocationWeather, DayForecast, Location } from "@/types/weather";
@@ -118,29 +118,15 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                         <div key={hour} className="flex flex-col items-center gap-0.5">
                           {hourForecast ? (
                             <>
-                              <WindSpeedBadge speed={hourForecast.windSpeed} size="sm" />
+                              <div className="flex items-center gap-0.5">
+                                <WindSpeedBadge speed={hourForecast.windSpeed} size="sm" />
+                                <span className="text-xs text-muted-foreground">({hourForecast.windGust.toFixed(1)})</span>
+                              </div>
                               <WindDirectionIcon 
                                 direction={hourForecast.windDirection} 
                                 className="w-3 h-3 text-muted-foreground"
                               />
                             </>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Gust row */}
-                  <div className="grid grid-cols-5 gap-2 items-center mb-1">
-                    <div className="text-xs text-muted-foreground font-medium whitespace-nowrap">Vindkast <span className="font-normal">(m/s)</span></div>
-                    {DISPLAY_HOURS.map((hour) => {
-                      const hourForecast = forecast.forecasts.find(f => f.hour === hour);
-                      return (
-                        <div key={hour} className="text-center">
-                          {hourForecast ? (
-                            <GustBadge gust={hourForecast.windGust} />
                           ) : (
                             <span className="text-muted-foreground text-xs">-</span>
                           )}
