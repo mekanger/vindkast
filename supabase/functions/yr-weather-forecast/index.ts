@@ -74,7 +74,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v2_${roundedLat}_${roundedLon}`;
+    const cacheKey = `weather_v3_${roundedLat}_${roundedLon}`; // v3 includes wave data
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
