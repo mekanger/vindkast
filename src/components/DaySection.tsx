@@ -11,7 +11,7 @@ import type { ActivityRule } from "@/types/activity";
 import { findDailyActivity } from "@/lib/activityMatcher";
 import { format, parseISO, isToday } from "date-fns";
 import { nb } from "date-fns/locale";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { convertWindSpeed, getWindUnitLabel } from "@/types/settings";
 
@@ -80,8 +80,19 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
   const { windUnit } = useUserSettings();
   const unitLabel = getWindUnitLabel(windUnit);
   
+  // Force re-calculation of display hours every minute
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+  
   // Get display hours, filtering out past hours for today
-  const displayHours = useMemo(() => getDisplayHours(isoDate), [isoDate]);
+  const displayHours = useMemo(() => getDisplayHours(isoDate), [isoDate, currentTime]);
 
   // Find the recommended activity for this day
   const dailyActivity = useMemo(() => {
