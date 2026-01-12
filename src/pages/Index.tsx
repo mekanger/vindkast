@@ -21,7 +21,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { savedLocations, loading: locationsLoading, saveLocation, removeLocation } = useSavedLocations();
-  const { rules: activityRules, refetch: refetchRules } = useActivityRules();
+  const { rules: activityRules, refetch: refetchRules, deleteRulesForLocation } = useActivityRules();
 
   // Load saved locations on mount
   useEffect(() => {
@@ -151,8 +151,14 @@ const Index = () => {
       if (error) {
         console.error('Error removing location:', error);
       }
+      
+      // Also delete activity rules for this location
+      const { error: rulesError } = await deleteRulesForLocation(id);
+      if (rulesError) {
+        console.error('Error removing activity rules:', rulesError);
+      }
     }
-  }, [user, removeLocation]);
+  }, [user, removeLocation, deleteRulesForLocation]);
 
   // Generate dates for next 3 days (based on current local date)
   const dayDates = useMemo(() => {
