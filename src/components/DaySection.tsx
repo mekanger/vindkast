@@ -120,8 +120,8 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                             {hourForecast ? (
                               <>
                                 <div className="flex flex-col sm:flex-row items-center gap-0.5">
-                                  <WindSpeedBadge speed={hourForecast.windSpeed} gust={hourForecast.windGust} size="sm" />
-                                  <span className="text-[10px] sm:text-xs text-muted-foreground">({hourForecast.windGust.toFixed(0)})</span>
+                                  <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" />
+                                  <span className="text-[10px] sm:text-xs text-muted-foreground">({hourForecast.windSpeed.toFixed(0)})</span>
                                 </div>
                                 <WindDirectionIcon 
                                   direction={hourForecast.windDirection} 
