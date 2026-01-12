@@ -111,7 +111,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                   
                   {/* Wind row */}
                   <div className="grid grid-cols-5 gap-2 items-center mb-1">
-                    <div className="text-xs text-muted-foreground font-medium">Vind <span className="font-normal">(m/s)</span></div>
+                    <div className="text-xs text-muted-foreground font-medium whitespace-nowrap">Vind <span className="font-normal">(m/s)</span></div>
                     {DISPLAY_HOURS.map((hour) => {
                       const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                       return (
@@ -134,7 +134,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                   
                   {/* Gust row */}
                   <div className="grid grid-cols-5 gap-2 items-center mb-1">
-                    <div className="text-xs text-muted-foreground font-medium">Vindkast <span className="font-normal">(m/s)</span></div>
+                    <div className="text-xs text-muted-foreground font-medium whitespace-nowrap">Vindkast <span className="font-normal">(m/s)</span></div>
                     {DISPLAY_HOURS.map((hour) => {
                       const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                       return (
@@ -152,7 +152,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                   {/* Sea current row - only show if any hour has data */}
                   {forecast.forecasts.some(f => f.seaCurrentSpeed != null) && (
                     <div className="grid grid-cols-5 gap-2 items-center">
-                      <div className="text-xs text-muted-foreground font-medium">Havstrøm <span className="font-normal">(cm/s)</span></div>
+                      <div className="text-xs text-muted-foreground font-medium whitespace-nowrap">Havstrøm <span className="font-normal">(cm/s)</span></div>
                       {DISPLAY_HOURS.map((hour) => {
                         const hourForecast = forecast.forecasts.find(f => f.hour === hour);
                         return (
