@@ -17,12 +17,19 @@ export async function searchLocations(query: string): Promise<YrLocation[]> {
     return [];
   }
 
+  if (query.length > 200) {
+    throw new Error('Søketeksten er for lang');
+  }
+
   const { data, error } = await supabase.functions.invoke('yr-location-search', {
     body: { query },
   });
 
   if (error) {
     console.error('Error searching locations:', error);
+    if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+      throw new Error('Du må være logget inn for å søke etter steder');
+    }
     throw new Error('Kunne ikke søke etter steder');
   }
 
@@ -30,15 +37,25 @@ export async function searchLocations(query: string): Promise<YrLocation[]> {
 }
 
 export async function fetchWeatherForecast(location: Location): Promise<LocationWeather> {
+  // Validate coordinates client-side
+  const lat = location.coordinates.lat;
+  const lon = location.coordinates.lon;
+  
+  if (typeof lat !== 'number' || typeof lon !== 'number' ||
+      lat < -90 || lat > 90 || lon < -180 || lon > 180 ||
+      !Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new Error('Ugyldige koordinater');
+  }
+
   const { data, error } = await supabase.functions.invoke('yr-weather-forecast', {
-    body: { 
-      lat: location.coordinates.lat, 
-      lon: location.coordinates.lon 
-    },
+    body: { lat, lon },
   });
 
   if (error) {
     console.error('Error fetching weather:', error);
+    if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+      throw new Error('Du må være logget inn for å hente værmelding');
+    }
     throw new Error('Kunne ikke hente værmelding');
   }
 

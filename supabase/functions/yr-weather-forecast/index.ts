@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,16 +12,68 @@ serve(async (req) => {
   }
 
   try {
+    // Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.log('Unauthorized: Missing or invalid Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data, error: authError } = await supabase.auth.getClaims(token);
+    if (authError || !data?.claims) {
+      console.log('Unauthorized: Invalid token', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { lat, lon } = await req.json();
 
-    if (!lat || !lon) {
+    // Comprehensive input validation
+    if (lat === undefined || lon === undefined) {
+      console.log('Missing coordinates');
       return new Response(
         JSON.stringify({ error: 'Latitude and longitude are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Fetching weather for:', lat, lon);
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
+      console.log('Invalid coordinate types:', typeof lat, typeof lon);
+      return new Response(
+        JSON.stringify({ error: 'Latitude and longitude must be numbers' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      console.log('Coordinates out of range:', lat, lon);
+      return new Response(
+        JSON.stringify({ error: 'Invalid coordinates: latitude must be -90 to 90, longitude -180 to 180' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      console.log('Non-finite coordinates:', lat, lon);
+      return new Response(
+        JSON.stringify({ error: 'Coordinates must be finite numbers' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Fetching weather for:', lat, lon, 'by user:', data.claims.sub);
 
     // Yr.no Locationforecast API (free, requires User-Agent)
     const forecastUrl = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
@@ -36,8 +89,8 @@ serve(async (req) => {
       throw new Error(`Met.no API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const timeseries = data.properties?.timeseries || [];
+    const responseData = await response.json();
+    const timeseries = responseData.properties?.timeseries || [];
 
     // Get target hours: 10, 12, 14, 16
     const targetHours = [10, 12, 14, 16];
