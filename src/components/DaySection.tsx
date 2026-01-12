@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
+import { WaveBadge } from "./WaveBadge";
 import { DailyActivityBadge } from "./DailyActivityBadge";
 import { X } from "lucide-react";
 import type { DayForecast, Location } from "@/types/weather";
@@ -158,6 +159,28 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                       })}
                     </div>
                     
+                    {/* Wave height row - only show if any hour has data */}
+                    {forecast.forecasts.some(f => f.waveHeight != null) && (
+                      <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
+                        <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Bølger<br /><span className="font-normal">(m)</span></div>
+                        {displayHours.map((hour) => {
+                          const hourForecast = forecast.forecasts.find(f => f.hour === hour);
+                          return (
+                            <div key={hour} className="text-center">
+                              {hourForecast?.waveHeight != null ? (
+                                <WaveBadge 
+                                  height={hourForecast.waveHeight} 
+                                  direction={hourForecast.waveDirection}
+                                />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     {/* Sea current row - only show if any hour has data */}
                     {forecast.forecasts.some(f => f.seaCurrentSpeed != null) && (
                       <div className={`grid gap-1 sm:gap-2 items-center`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>

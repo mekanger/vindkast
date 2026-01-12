@@ -187,6 +187,9 @@ serve(async (req) => {
           // Ocean current data (sea_water_speed is in m/s, we convert to cm/s in client)
           seaCurrentSpeed: oceanInstant?.sea_water_speed ?? null,
           seaCurrentDirection: oceanInstant?.sea_water_to_direction ?? null,
+          // Wave data
+          waveHeight: oceanInstant?.sea_surface_wave_height ?? null,
+          waveDirection: oceanInstant?.sea_surface_wave_from_direction ?? null,
         });
       }
 
