@@ -74,6 +74,33 @@ export const useActivityRules = () => {
     }
   }, [user, rules]);
 
+  const updateRule = useCallback(async (ruleId: string, updates: {
+    location_id?: string;
+    location_name?: string;
+    activity?: ActivityType;
+    min_gust?: number;
+    max_gust?: number;
+  }) => {
+    if (!user) return { error: new Error('Not authenticated') };
+
+    try {
+      const { data, error } = await supabase
+        .from('activity_rules')
+        .update(updates)
+        .eq('id', ruleId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRules(prev => prev.map(r => r.id === ruleId ? (data as ActivityRule) : r));
+      return { error: null };
+    } catch (error) {
+      console.error('Error updating rule:', error);
+      return { error: error as Error };
+    }
+  }, [user]);
+
   const deleteRule = useCallback(async (ruleId: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
@@ -133,6 +160,7 @@ export const useActivityRules = () => {
     rules,
     loading,
     addRule,
+    updateRule,
     deleteRule,
     updatePriorities,
     refetch: fetchRules,

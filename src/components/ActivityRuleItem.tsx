@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ActivityRule } from '@/types/activity';
 import { ACTIVITY_LABELS } from '@/types/activity';
@@ -21,10 +21,11 @@ const ACTIVITY_IMAGES: Record<string, string> = {
 
 interface ActivityRuleItemProps {
   rule: ActivityRule;
+  onEdit: (rule: ActivityRule) => void;
   onDelete: (id: string) => void;
 }
 
-export const ActivityRuleItem = ({ rule, onDelete }: ActivityRuleItemProps) => {
+export const ActivityRuleItem = ({ rule, onEdit, onDelete }: ActivityRuleItemProps) => {
   const { windUnit } = useUserSettings();
   const {
     attributes,
@@ -73,6 +74,15 @@ export const ActivityRuleItem = ({ rule, onDelete }: ActivityRuleItemProps) => {
           {rule.location_name} • {minDisplay}-{maxDisplay} {unitLabel}
         </p>
       </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onEdit(rule)}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <Pencil className="w-4 h-4" />
+      </Button>
 
       <Button
         variant="ghost"
