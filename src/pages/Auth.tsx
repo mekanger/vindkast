@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wind, Mail, Lock, Loader2 } from 'lucide-react';
+import { Wind, Mail, Lock, Loader2, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,33 +55,45 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = isLogin 
-        ? await signIn(email, password)
-        : await signUp(email, password);
-
-      if (error) {
-        let message = error.message;
-        if (error.message.includes('Invalid login credentials')) {
-          message = 'Feil e-post eller passord';
-        } else if (error.message.includes('User already registered')) {
-          message = 'Denne e-posten er allerede registrert';
-        } else if (error.message.includes('Email not confirmed')) {
-          message = 'Vennligst bekreft e-posten din før du logger inn';
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) {
+          let message = error.message;
+          if (error.message.includes('Invalid login credentials')) {
+            message = 'Feil e-post eller passord';
+          } else if (error.message.includes('Email not confirmed')) {
+            message = 'Vennligst bekreft e-posten din før du logger inn';
+          }
+          
+          toast({
+            title: 'Innlogging feilet',
+            description: message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Velkommen tilbake!',
+            description: 'Du er nå logget inn',
+          });
+          navigate('/');
         }
-        
-        toast({
-          title: isLogin ? 'Innlogging feilet' : 'Registrering feilet',
-          description: message,
-          variant: 'destructive',
-        });
       } else {
-        toast({
-          title: isLogin ? 'Velkommen tilbake!' : 'Konto opprettet!',
-          description: isLogin 
-            ? 'Du er nå logget inn' 
-            : 'Du er nå registrert og logget inn',
-        });
-        navigate('/');
+        const { error } = await signUp(email, password);
+        if (error) {
+          let message = error.message;
+          if (error.message.includes('User already registered')) {
+            message = 'Denne e-posten er allerede registrert';
+          }
+          
+          toast({
+            title: 'Registrering feilet',
+            description: message,
+            variant: 'destructive',
+          });
+        } else {
+          // Show confirmation message instead of navigating
+          setShowConfirmation(true);
+        }
       }
     } finally {
       setLoading(false);
@@ -102,6 +115,43 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show confirmation message after signup
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen gradient-sky flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-card">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-green-500 shadow-soft">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Sjekk e-posten din!</CardTitle>
+            <CardDescription className="text-base">
+              Vi har sendt en bekreftelseslenke til <strong>{email}</strong>. 
+              Klikk på lenken for å aktivere kontoen din.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Finner du ikke e-posten? Sjekk søppelpost-mappen.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                setShowConfirmation(false);
+                setIsLogin(true);
+              }}
+            >
+              Tilbake til innlogging
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-sky flex items-center justify-center p-4">
