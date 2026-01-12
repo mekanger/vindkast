@@ -123,7 +123,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
           <Input
             id="minGust"
             type="number"
-            step="0.1"
+            step="1"
             min="0"
             value={minGust}
             onChange={(e) => setMinGust(e.target.value)}
@@ -139,7 +139,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
           <Input
             id="maxGust"
             type="number"
-            step="0.1"
+            step="1"
             min="0"
             value={maxGust}
             onChange={(e) => setMaxGust(e.target.value)}
