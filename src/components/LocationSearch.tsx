@@ -67,11 +67,6 @@ export const LocationSearch = ({ onLocationSelect, existingLocationIds }: Locati
     setQuery("");
     setResults([]);
     setShowResults(false);
-    
-    toast({
-      title: "Sted lagt til",
-      description: `${location.name} er nå lagt til i dashbordet.`,
-    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
