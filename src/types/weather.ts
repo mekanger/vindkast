@@ -14,6 +14,8 @@ export interface WindForecast {
   windSpeed: number;
   windGust: number;
   windDirection: number;
+  seaCurrentSpeed?: number;  // cm/s
+  seaCurrentDirection?: number;
 }
 
 export interface DayForecast {
