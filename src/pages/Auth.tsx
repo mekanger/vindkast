@@ -162,7 +162,7 @@ const Auth = () => {
               <Wind className="w-8 h-8 text-primary-foreground animate-wind" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">VindVarsel</CardTitle>
+          <CardTitle className="text-2xl font-bold">Vindkast</CardTitle>
           <CardDescription>
             {isLogin ? 'Logg inn for å se dine lagrede steder' : 'Opprett en konto for å lagre steder'}
           </CardDescription>

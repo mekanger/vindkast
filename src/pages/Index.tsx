@@ -197,7 +197,7 @@ const Index = () => {
                   <Wind className="w-6 h-6 text-primary-foreground animate-wind" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">VindVarsel</h1>
+                  <h1 className="text-xl font-bold text-foreground">Vindkast</h1>
                   <p className="text-sm text-muted-foreground">Vindmelding fra yr.no</p>
                 </div>
               </div>
