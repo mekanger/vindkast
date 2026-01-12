@@ -158,7 +158,10 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation }: D
                         return (
                           <div key={hour} className="text-center">
                             {hourForecast?.seaCurrentSpeed != null ? (
-                              <SeaCurrentBadge speed={hourForecast.seaCurrentSpeed} />
+                              <SeaCurrentBadge 
+                                speed={hourForecast.seaCurrentSpeed} 
+                                direction={hourForecast.seaCurrentDirection}
+                              />
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
                             )}
