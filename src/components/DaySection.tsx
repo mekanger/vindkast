@@ -128,17 +128,28 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                       <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vindkast<br /><span className="font-normal">({unitLabel})</span></div>
                       {displayHours.map((hour) => {
                         const hourForecast = forecast.forecasts.find(f => f.hour === hour);
+                        // Check if this hour is in the past (for today) and has no wind data
+                        const now = new Date();
+                        const forecastDate = parseISO(isoDate);
+                        const isPastHour = isToday(forecastDate) && hour < now.getHours();
+                        const hasNoWindData = hourForecast && hourForecast.windSpeed === 0 && hourForecast.windGust === 0;
+                        const showDash = isPastHour && hasNoWindData;
+                        
                         return (
                           <div key={hour} className="flex flex-col items-center gap-0.5">
                             {hourForecast ? (
-                              <>
-                                <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" unit={windUnit} />
-                                <span className="text-[10px] text-muted-foreground">{convertWindSpeed(hourForecast.windSpeed, windUnit).toFixed(0)}</span>
-                                <WindDirectionIcon 
-                                  direction={hourForecast.windDirection} 
-                                  className="w-3 h-3 text-muted-foreground"
-                                />
-                              </>
+                              showDash ? (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              ) : (
+                                <>
+                                  <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" unit={windUnit} />
+                                  <span className="text-[10px] text-muted-foreground">{convertWindSpeed(hourForecast.windSpeed, windUnit).toFixed(0)}</span>
+                                  <WindDirectionIcon 
+                                    direction={hourForecast.windDirection} 
+                                    className="w-3 h-3 text-muted-foreground"
+                                  />
+                                </>
+                              )
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
                             )}
