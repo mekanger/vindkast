@@ -23,19 +23,34 @@ export function getMaxGustForDay(forecast: DayForecast | undefined): number {
 }
 
 /**
- * Find the matching activity based on rules, location, and max gust
+ * Check if any of the display hours has a gust value within the given range
+ */
+function hasMatchingGustInRange(
+  forecast: DayForecast,
+  minGust: number,
+  maxGust: number
+): boolean {
+  const relevantForecasts = forecast.forecasts.filter(f => DISPLAY_HOURS.includes(f.hour));
+  
+  return relevantForecasts.some(f => f.windGust >= minGust && f.windGust <= maxGust);
+}
+
+/**
+ * Find the matching activity based on rules, location, and forecast
  * Rules are already sorted by priority (lowest number = highest priority)
+ * A rule matches if ANY of the display hours has a gust within the rule's range
  */
 export function findMatchingActivity(
   rules: ActivityRule[],
   locationId: string,
-  maxGust: number
+  forecast: DayForecast | undefined
 ): ActivityType | null {
+  if (!forecast) return null;
+  
   for (const rule of rules) {
     if (
       rule.location_id === locationId &&
-      maxGust >= rule.min_gust &&
-      maxGust <= rule.max_gust
+      hasMatchingGustInRange(forecast, rule.min_gust, rule.max_gust)
     ) {
       return rule.activity;
     }
@@ -46,6 +61,7 @@ export function findMatchingActivity(
 /**
  * Find the best activity for a day across all locations
  * Returns the first matching rule (highest priority) with its location
+ * A rule matches if ANY of the display hours has a gust within the rule's range
  */
 export function findDailyActivity(
   rules: ActivityRule[],
@@ -58,9 +74,7 @@ export function findDailyActivity(
     );
     if (!locationData || !locationData.forecast) continue;
     
-    const maxGust = getMaxGustForDay(locationData.forecast);
-    
-    if (maxGust >= rule.min_gust && maxGust <= rule.max_gust) {
+    if (hasMatchingGustInRange(locationData.forecast, rule.min_gust, rule.max_gust)) {
       return {
         activity: rule.activity,
         locationName: rule.location_name,
