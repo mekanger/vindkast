@@ -97,12 +97,12 @@ export const ActivityRulesManager = ({ locations, onRulesChange }: ActivityRules
         <SheetTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
             <Settings2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Aktivitetsregler</span>
+            <span className="hidden sm:inline">Aktiviteter</span>
           </Button>
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Aktivitetsregler</SheetTitle>
+            <SheetTitle>Aktiviteter</SheetTitle>
             <SheetDescription>
               Definer regler for å få anbefalinger om aktivitet basert på vindforhold.
             </SheetDescription>
