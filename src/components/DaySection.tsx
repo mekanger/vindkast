@@ -36,35 +36,58 @@ const ALL_DISPLAY_HOURS = [10, 12, 14, 16];
  */
 const getDisplayHours = (dateStr: string): number[] => {
   try {
-    const date = parseISO(dateStr);
-    if (!isToday(date)) {
+    // Check if date is today using local time
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    if (dateStr !== todayStr) {
       return ALL_DISPLAY_HOURS;
     }
 
-    const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+    // For today, filter hours that are more than 30 minutes in the past
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
 
     return ALL_DISPLAY_HOURS.filter((hour) => {
-      const hourDateUtc = new Date(
-        `${dateStr}T${hour.toString().padStart(2, "0")}:00:00Z`
-      );
-      return hourDateUtc >= cutoff;
+      // If hour is in the future, always show
+      if (hour > currentHour) return true;
+      // If hour is current hour, show (within the hour)
+      if (hour === currentHour) return true;
+      // If hour is in the past, check if within 30 minutes
+      // e.g., if current time is 14:20, hour 14 is shown, hour 12 is hidden
+      // but if current time is 14:20, hour 14 (which started at 14:00) is 20 min ago, so show
+      // We need to check: is the END of the hour (hour:59) within 30 min of now?
+      // Actually simpler: hide if (currentHour - hour) > 0 AND we're past the 30 min mark
+      // Let's just check: currentTime - hourTime > 30 min
+      const hourEndTime = hour * 60 + 59; // end of the hour in minutes
+      const currentTimeInMinutes = currentHour * 60 + currentMinutes;
+      return (currentTimeInMinutes - hourEndTime) <= 30;
     });
   } catch {
     return ALL_DISPLAY_HOURS;
   }
 };
 
+// Helper to get local date string (YYYY-MM-DD)
+const getLocalDateStr = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDateHeader = (dateStr: string): { dayName: string; dateFormatted: string; isoDate: string } => {
   try {
     const date = parseISO(dateStr);
     
-    // Compare using ISO date strings to avoid timezone issues
+    // Compare using local date strings to avoid timezone issues
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getLocalDateStr(today);
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowStr = getLocalDateStr(tomorrow);
     
     if (dateStr === todayStr) {
       return { dayName: "I dag", dateFormatted: format(date, "d. MMMM", { locale: nb }), isoDate: dateStr };
