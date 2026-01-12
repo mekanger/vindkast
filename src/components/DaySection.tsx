@@ -41,7 +41,7 @@ const getDisplayHours = (dateStr: string): number[] => {
       return ALL_DISPLAY_HOURS;
     }
 
-    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 30 * 60 * 1000);
 
     return ALL_DISPLAY_HOURS.filter((hour) => {
       const hourDateUtc = new Date(
