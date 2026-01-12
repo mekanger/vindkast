@@ -62,6 +62,8 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
       windDirection: Math.round(fc.windDirection),
       seaCurrentSpeed: fc.seaCurrentSpeed != null ? Math.round(fc.seaCurrentSpeed * 100) : undefined, // m/s to cm/s
       seaCurrentDirection: fc.seaCurrentDirection != null ? Math.round(fc.seaCurrentDirection) : undefined,
+      waveHeight: fc.waveHeight != null ? Math.round(fc.waveHeight * 10) / 10 : undefined,
+      waveDirection: fc.waveDirection != null ? Math.round(fc.waveDirection) : undefined,
     }));
 
     return {
