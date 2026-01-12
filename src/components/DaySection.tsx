@@ -142,7 +142,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                             {hourForecast ? (
                               <>
                                 <WindSpeedBadge speed={hourForecast.windGust} gust={hourForecast.windGust} size="sm" unit={windUnit} />
-                                <span className="text-[10px] text-muted-foreground">({convertWindSpeed(hourForecast.windSpeed, windUnit).toFixed(0)})</span>
+                                <span className="text-[10px] text-muted-foreground">{convertWindSpeed(hourForecast.windSpeed, windUnit).toFixed(0)}</span>
                                 <WindDirectionIcon 
                                   direction={hourForecast.windDirection} 
                                   className="w-3 h-3 text-muted-foreground"
