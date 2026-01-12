@@ -51,10 +51,12 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         wind: {
-          light: "hsl(var(--wind-light))",
-          medium: "hsl(var(--wind-medium))",
-          strong: "hsl(var(--wind-strong))",
-          extreme: "hsl(var(--wind-extreme))",
+          0: "hsl(var(--wind-0))",
+          5: "hsl(var(--wind-5))",
+          10: "hsl(var(--wind-10))",
+          15: "hsl(var(--wind-15))",
+          20: "hsl(var(--wind-20))",
+          25: "hsl(var(--wind-25))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

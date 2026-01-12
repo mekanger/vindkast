@@ -2,19 +2,22 @@ import { cn } from "@/lib/utils";
 
 interface WindSpeedBadgeProps {
   speed: number;
+  gust: number;
   className?: string;
   size?: "sm" | "md";
 }
 
-const getWindLevel = (speed: number) => {
-  if (speed < 5) return { level: "light", label: "Svak", color: "bg-wind-light text-foreground" };
-  if (speed < 10) return { level: "medium", label: "Moderat", color: "bg-wind-medium text-foreground" };
-  if (speed < 15) return { level: "strong", label: "Frisk", color: "bg-wind-strong text-primary-foreground" };
-  return { level: "extreme", label: "Sterk", color: "bg-wind-extreme text-primary-foreground" };
+const getWindColorByGust = (gust: number): { bg: string; text: string } => {
+  if (gust < 5) return { bg: "bg-wind-0", text: "text-foreground" };
+  if (gust < 10) return { bg: "bg-wind-5", text: "text-foreground" };
+  if (gust < 15) return { bg: "bg-wind-10", text: "text-primary-foreground" };
+  if (gust < 20) return { bg: "bg-wind-15", text: "text-primary-foreground" };
+  if (gust < 25) return { bg: "bg-wind-20", text: "text-primary-foreground" };
+  return { bg: "bg-wind-25", text: "text-primary-foreground" };
 };
 
-export const WindSpeedBadge = ({ speed, className, size = "md" }: WindSpeedBadgeProps) => {
-  const { color } = getWindLevel(speed);
+export const WindSpeedBadge = ({ speed, gust, className, size = "md" }: WindSpeedBadgeProps) => {
+  const { bg, text } = getWindColorByGust(gust);
   
   const sizeClasses = size === "sm" 
     ? "px-1.5 py-0.5 rounded text-xs min-w-[2.5rem]"
@@ -24,7 +27,8 @@ export const WindSpeedBadge = ({ speed, className, size = "md" }: WindSpeedBadge
     <span className={cn(
       "inline-flex items-center justify-center font-medium",
       sizeClasses,
-      color,
+      bg,
+      text,
       className
     )}>
       {speed.toFixed(1)}

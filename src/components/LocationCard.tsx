@@ -75,7 +75,7 @@ export const LocationCard = ({ data, onRemove, isLoading }: LocationCardProps) =
                         <td key={hour} className="py-3 px-2 text-center">
                           {forecast ? (
                             <div className="flex flex-col items-center gap-1">
-                              <WindSpeedBadge speed={forecast.windSpeed} />
+                              <WindSpeedBadge speed={forecast.windSpeed} gust={forecast.windGust} />
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <WindDirectionIcon 
                                   direction={forecast.windDirection} 
