@@ -181,29 +181,6 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
           />
         </div>
 
-        <div className="col-span-2">
-          <Label className="text-sm font-medium mb-2 block">
-            Vindretning (valgfritt)
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {WIND_DIRECTION_OPTIONS.map(option => (
-              <label
-                key={option.value}
-                className="flex items-center gap-1.5 cursor-pointer"
-              >
-                <Checkbox
-                  checked={windDirections.includes(option.value)}
-                  onCheckedChange={() => toggleWindDirection(option.value)}
-                />
-                <span className="text-sm">{option.label}</span>
-              </label>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Hvis ingen er valgt, matcher regelen alle vindretninger
-          </p>
-        </div>
-
         <div>
           <Label htmlFor="minTemp" className="text-sm font-medium">
             Min temperatur (°C)
@@ -232,6 +209,29 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
             placeholder="Valgfritt"
             className="mt-1"
           />
+        </div>
+
+        <div className="col-span-2">
+          <Label className="text-sm font-medium mb-2 block">
+            Vindretning (valgfritt)
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {WIND_DIRECTION_OPTIONS.map(option => (
+              <label
+                key={option.value}
+                className="flex items-center gap-1.5 cursor-pointer"
+              >
+                <Checkbox
+                  checked={windDirections.includes(option.value)}
+                  onCheckedChange={() => toggleWindDirection(option.value)}
+                />
+                <span className="text-sm">{option.label}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Hvis ingen er valgt, matcher regelen alle vindretninger
+          </p>
         </div>
       </div>
 
