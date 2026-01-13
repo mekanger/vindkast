@@ -15,6 +15,7 @@ export interface WindForecast {
   windGust: number;
   windDirection: number;
   temperature?: number;  // Celsius
+  symbolCode?: string;   // Yr weather symbol code (e.g. "clearsky_day", "cloudy")
   seaCurrentSpeed?: number;  // cm/s
   seaCurrentDirection?: number;
   waveHeight?: number;  // meters

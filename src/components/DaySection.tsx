@@ -6,6 +6,7 @@ import { WindSpeedBadge } from "./WindSpeedBadge";
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { WaveBadge } from "./WaveBadge";
 import { TemperatureBadge } from "./TemperatureBadge";
+import { WeatherIcon } from "./WeatherIcon";
 import { DailyActivityBadge } from "./DailyActivityBadge";
 import { LocationActivityBadges } from "./LocationActivityBadges";
 import { X } from "lucide-react";
@@ -152,6 +153,25 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                         </div>
                       ))}
                     </div>
+
+                    {/* Weather icon row - only show if any hour has symbol data */}
+                    {forecast.forecasts.some(f => f.symbolCode) && (
+                      <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
+                        <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Vær</div>
+                        {displayHours.map((hour) => {
+                          const hourForecast = forecast.forecasts.find(f => f.hour === hour);
+                          return (
+                            <div key={hour} className="flex justify-center">
+                              {hourForecast?.symbolCode ? (
+                                <WeatherIcon symbolCode={hourForecast.symbolCode} size="sm" />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     
                     {/* Wind row */}
                     <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
