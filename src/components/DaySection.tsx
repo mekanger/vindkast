@@ -238,12 +238,20 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                     {forecast.forecasts.some(f => f.tidalHeight != null) && (
                       <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                         <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Tidevann<br /><span className="font-normal">(cm)</span></div>
-                        {displayHours.map((hour) => {
+                        {displayHours.map((hour, hourIndex) => {
                           const hourForecast = forecast.forecasts.find(f => f.hour === hour);
+                          // Get previous hour's tidal height for trend calculation
+                          const prevHour = displayHours[hourIndex - 1];
+                          const prevForecast = prevHour ? forecast.forecasts.find(f => f.hour === prevHour) : undefined;
+                          const previousHeight = prevForecast?.tidalHeight;
+                          
                           return (
                             <div key={hour} className="text-center">
                               {hourForecast?.tidalHeight != null ? (
-                                <TidalBadge height={hourForecast.tidalHeight} />
+                                <TidalBadge 
+                                  height={hourForecast.tidalHeight} 
+                                  previousHeight={previousHeight}
+                                />
                               ) : (
                                 <span className="text-muted-foreground text-xs">-</span>
                               )}
