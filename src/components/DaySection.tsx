@@ -93,15 +93,16 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
         </div>
       </div>
 
-      {/* Panels for this day */}
-      <div className="flex flex-wrap gap-4">
-        {dailyActivity && (
-          <DailyActivityBadge
-            activity={dailyActivity.activity}
-            locationName={dailyActivity.locationName}
-          />
-        )}
+      {/* Daily Activity Recommendation */}
+      {dailyActivity && (
+        <DailyActivityBadge 
+          activity={dailyActivity.activity} 
+          locationName={dailyActivity.locationName} 
+        />
+      )}
 
+      {/* Locations for this day */}
+      <div className="flex flex-wrap gap-4">
         {locationsWithForecasts.map(({ location, forecast, isLoading }) => {
           const matchingActivities = locationActivities.get(location.id) || [];
 
