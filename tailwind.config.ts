@@ -58,6 +58,14 @@ export default {
           20: "hsl(var(--wind-20))",
           25: "hsl(var(--wind-25))",
         },
+        temp: {
+          "cold-strong": "hsl(var(--temp-cold-strong))",
+          cold: "hsl(var(--temp-cold))",
+          cool: "hsl(var(--temp-cool))",
+          warm: "hsl(var(--temp-warm))",
+          hot: "hsl(var(--temp-hot))",
+          "hot-strong": "hsl(var(--temp-hot-strong))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
