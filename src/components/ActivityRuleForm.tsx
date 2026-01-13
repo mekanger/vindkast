@@ -22,8 +22,8 @@ interface ActivityRuleFormProps {
     location_id: string;
     location_name: string;
     activity: ActivityType;
-    min_gust: number;
-    max_gust: number;
+    min_gust?: number | null;
+    max_gust?: number | null;
     wind_directions?: WindDirection[] | null;
     min_temp?: number | null;
     max_temp?: number | null;
@@ -55,21 +55,24 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!locationId || !activity || minGust === '' || maxGust === '' || !selectedLocation) return;
+    if (!locationId || !activity || !selectedLocation) return;
 
-    const minGustNum = parseFloat(minGust);
-    const maxGustNum = parseFloat(maxGust);
+    const minGustNum = minGust !== '' ? parseFloat(minGust) : null;
+    const maxGustNum = maxGust !== '' ? parseFloat(maxGust) : null;
     const minTempNum = minTemp !== '' ? parseFloat(minTemp) : null;
     const maxTempNum = maxTemp !== '' ? parseFloat(maxTemp) : null;
 
-    if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum < 0 || maxGustNum < 0 || minGustNum > maxGustNum) return;
+    // Validate gust values if provided
+    if (minGustNum !== null && (isNaN(minGustNum) || minGustNum < 0)) return;
+    if (maxGustNum !== null && (isNaN(maxGustNum) || maxGustNum < 0)) return;
+    if (minGustNum !== null && maxGustNum !== null && minGustNum > maxGustNum) return;
 
     // Validate temperature range if both are set
     if (minTempNum !== null && maxTempNum !== null && minTempNum > maxTempNum) return;
 
-    // Convert from display unit to m/s for storage
-    const minGustMs = windUnit === 'knots' ? minGustNum / MS_TO_KNOTS : minGustNum;
-    const maxGustMs = windUnit === 'knots' ? maxGustNum / MS_TO_KNOTS : maxGustNum;
+    // Convert from display unit to m/s for storage (only if values are set)
+    const minGustMs = minGustNum !== null ? (windUnit === 'knots' ? minGustNum / MS_TO_KNOTS : minGustNum) : null;
+    const maxGustMs = maxGustNum !== null ? (windUnit === 'knots' ? maxGustNum / MS_TO_KNOTS : maxGustNum) : null;
 
     setIsSubmitting(true);
     
@@ -107,10 +110,21 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
     return true;
   };
 
-  const isValid = locationId && activity && minGust !== '' && maxGust !== '' && 
-    !isNaN(parseFloat(minGust)) && !isNaN(parseFloat(maxGust)) &&
-    parseFloat(minGust) >= 0 && parseFloat(maxGust) >= 0 &&
-    parseFloat(minGust) <= parseFloat(maxGust) && tempRangeValid();
+  const gustRangeValid = () => {
+    const minGustNum = minGust !== '' ? parseFloat(minGust) : null;
+    const maxGustNum = maxGust !== '' ? parseFloat(maxGust) : null;
+    // If both are set, min must be <= max
+    if (minGustNum !== null && maxGustNum !== null) {
+      return minGustNum <= maxGustNum;
+    }
+    // If only one or neither is set, it's valid
+    // Also check that any set value is non-negative
+    if (minGustNum !== null && minGustNum < 0) return false;
+    if (maxGustNum !== null && maxGustNum < 0) return false;
+    return true;
+  };
+
+  const isValid = locationId && activity && tempRangeValid() && gustRangeValid();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-muted/50 rounded-lg">
@@ -162,6 +176,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
             min="0"
             value={minGust}
             onChange={(e) => setMinGust(e.target.value)}
+            placeholder="Valgfritt"
             className="mt-1"
           />
         </div>
@@ -177,6 +192,7 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
             min="0"
             value={maxGust}
             onChange={(e) => setMaxGust(e.target.value)}
+            placeholder="Valgfritt"
             className="mt-1"
           />
         </div>

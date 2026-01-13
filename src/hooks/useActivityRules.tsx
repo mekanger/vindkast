@@ -39,8 +39,8 @@ export const useActivityRules = () => {
     location_id: string;
     location_name: string;
     activity: ActivityType;
-    min_gust: number;
-    max_gust: number;
+    min_gust?: number | null;
+    max_gust?: number | null;
     wind_directions?: WindDirection[] | null;
     min_temp?: number | null;
     max_temp?: number | null;
@@ -60,8 +60,8 @@ export const useActivityRules = () => {
           location_id: rule.location_id,
           location_name: rule.location_name,
           activity: rule.activity,
-          min_gust: rule.min_gust,
-          max_gust: rule.max_gust,
+          min_gust: rule.min_gust ?? null,
+          max_gust: rule.max_gust ?? null,
           priority: minPriority,
           wind_directions: rule.wind_directions || null,
           min_temp: rule.min_temp ?? null,
@@ -84,8 +84,8 @@ export const useActivityRules = () => {
     location_id?: string;
     location_name?: string;
     activity?: ActivityType;
-    min_gust?: number;
-    max_gust?: number;
+    min_gust?: number | null;
+    max_gust?: number | null;
     wind_directions?: WindDirection[] | null;
     min_temp?: number | null;
     max_temp?: number | null;

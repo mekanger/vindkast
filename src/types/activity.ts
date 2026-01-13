@@ -8,8 +8,8 @@ export interface ActivityRule {
   location_id: string;
   location_name: string;
   activity: ActivityType;
-  min_gust: number;
-  max_gust: number;
+  min_gust: number | null;
+  max_gust: number | null;
   priority: number;
   created_at: string;
   wind_directions: WindDirection[] | null;
