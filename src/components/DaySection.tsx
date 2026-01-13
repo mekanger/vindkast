@@ -188,28 +188,6 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                       })}
                     </div>
                     
-                    {/* Temperature row - only show if any hour has data */}
-                    {forecast.forecasts.some(f => f.temperature != null) && (
-                      <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
-                        <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium flex items-center gap-1">
-                          <Thermometer className="w-3 h-3" />
-                          <span>°C</span>
-                        </div>
-                        {displayHours.map((hour) => {
-                          const hourForecast = forecast.forecasts.find(f => f.hour === hour);
-                          return (
-                            <div key={hour} className="text-center">
-                              {hourForecast?.temperature != null ? (
-                                <TemperatureBadge temperature={hourForecast.temperature} />
-                              ) : (
-                                <span className="text-muted-foreground text-xs">-</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
                     {/* Wave height row - only show if any hour has data */}
                     {forecast.forecasts.some(f => f.waveHeight != null) && (
                       <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
@@ -234,7 +212,7 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
 
                     {/* Sea current row - only show if any hour has data */}
                     {forecast.forecasts.some(f => f.seaCurrentSpeed != null) && (
-                      <div className={`grid gap-1 sm:gap-2 items-center`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
+                      <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
                         <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Havstrøm<br /><span className="font-normal">(cm/s)</span></div>
                         {displayHours.map((hour) => {
                           const hourForecast = forecast.forecasts.find(f => f.hour === hour);
@@ -245,6 +223,28 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                                   speed={hourForecast.seaCurrentSpeed} 
                                   direction={hourForecast.seaCurrentDirection}
                                 />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Temperature row - only show if any hour has data */}
+                    {forecast.forecasts.some(f => f.temperature != null) && (
+                      <div className={`grid gap-1 sm:gap-2 items-center`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
+                        <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium flex items-center gap-1">
+                          <Thermometer className="w-3 h-3" />
+                          <span>°C</span>
+                        </div>
+                        {displayHours.map((hour) => {
+                          const hourForecast = forecast.forecasts.find(f => f.hour === hour);
+                          return (
+                            <div key={hour} className="text-center">
+                              {hourForecast?.temperature != null ? (
+                                <TemperatureBadge temperature={hourForecast.temperature} />
                               ) : (
                                 <span className="text-muted-foreground text-xs">-</span>
                               )}
