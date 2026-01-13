@@ -93,26 +93,25 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
         </div>
       </div>
 
-      {/* Daily Activity Recommendation */}
-      {dailyActivity && (
-        <DailyActivityBadge 
-          activity={dailyActivity.activity} 
-          locationName={dailyActivity.locationName} 
-        />
-      )}
-
-      {/* Locations for this day */}
+      {/* Panels for this day */}
       <div className="flex flex-wrap gap-4">
+        {dailyActivity && (
+          <DailyActivityBadge
+            activity={dailyActivity.activity}
+            locationName={dailyActivity.locationName}
+          />
+        )}
+
         {locationsWithForecasts.map(({ location, forecast, isLoading }) => {
           const matchingActivities = locationActivities.get(location.id) || [];
-          
+
           return (
             <Card 
               key={location.id} 
               className="gradient-card shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden group w-full sm:w-[340px] flex-shrink-0"
             >
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-start justify-between gap-2">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
