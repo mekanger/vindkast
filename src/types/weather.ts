@@ -20,6 +20,7 @@ export interface WindForecast {
   seaCurrentDirection?: number;
   waveHeight?: number;  // meters
   waveDirection?: number;
+  tidalHeight?: number;  // cm relative to chart datum
 }
 
 export interface DayForecast {
