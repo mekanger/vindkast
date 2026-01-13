@@ -22,7 +22,9 @@ export type Database = {
           location_id: string
           location_name: string
           max_gust: number
+          max_temp: number | null
           min_gust: number
+          min_temp: number | null
           priority: number
           user_id: string
           wind_directions: string[] | null
@@ -34,7 +36,9 @@ export type Database = {
           location_id: string
           location_name: string
           max_gust: number
+          max_temp?: number | null
           min_gust: number
+          min_temp?: number | null
           priority?: number
           user_id: string
           wind_directions?: string[] | null
@@ -46,7 +50,9 @@ export type Database = {
           location_id?: string
           location_name?: string
           max_gust?: number
+          max_temp?: number | null
           min_gust?: number
+          min_temp?: number | null
           priority?: number
           user_id?: string
           wind_directions?: string[] | null

@@ -42,6 +42,8 @@ export const useActivityRules = () => {
     min_gust: number;
     max_gust: number;
     wind_directions?: WindDirection[] | null;
+    min_temp?: number | null;
+    max_temp?: number | null;
   }) => {
     if (!user) return { error: new Error('Not authenticated') };
 
@@ -62,6 +64,8 @@ export const useActivityRules = () => {
           max_gust: rule.max_gust,
           priority: minPriority,
           wind_directions: rule.wind_directions || null,
+          min_temp: rule.min_temp ?? null,
+          max_temp: rule.max_temp ?? null,
         })
         .select()
         .single();
@@ -83,6 +87,8 @@ export const useActivityRules = () => {
     min_gust?: number;
     max_gust?: number;
     wind_directions?: WindDirection[] | null;
+    min_temp?: number | null;
+    max_temp?: number | null;
   }) => {
     if (!user) return { error: new Error('Not authenticated') };
 
