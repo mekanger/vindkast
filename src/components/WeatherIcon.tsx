@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 interface WeatherIconProps {
   symbolCode: string;
   size?: "sm" | "md" | "lg";
@@ -5,14 +7,23 @@ interface WeatherIconProps {
 }
 
 export const WeatherIcon = ({ symbolCode, size = "md", className = "" }: WeatherIconProps) => {
+  const [failed, setFailed] = useState(false);
+
   const sizeClasses = {
     sm: "w-5 h-5",
     md: "w-6 h-6",
     lg: "w-8 h-8",
   };
 
-  // Use Yr's official weather symbols from NRK's GitHub
-  const iconUrl = `https://raw.githubusercontent.com/nrkno/yr-weather-symbols/refs/heads/master/dist/svg/${symbolCode}.svg`;
+  const iconUrl = useMemo(() => {
+    // Official MET icon set where filename corresponds to `symbol_code`
+    // Source: https://github.com/metno/weathericons
+    return `https://raw.githubusercontent.com/metno/weathericons/main/weather/svg/${symbolCode}.svg`;
+  }, [symbolCode]);
+
+  if (failed) {
+    return <span className="text-muted-foreground text-xs">-</span>;
+  }
 
   return (
     <img
@@ -20,10 +31,8 @@ export const WeatherIcon = ({ symbolCode, size = "md", className = "" }: Weather
       alt={symbolCode.replace(/_/g, " ")}
       className={`${sizeClasses[size]} ${className}`}
       loading="lazy"
-      onError={(e) => {
-        // Hide image if it fails to load
-        e.currentTarget.style.display = "none";
-      }}
+      decoding="async"
+      onError={() => setFailed(true)}
     />
   );
 };
