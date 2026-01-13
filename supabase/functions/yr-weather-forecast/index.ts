@@ -74,7 +74,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v5_${roundedLat}_${roundedLon}`; // v5 includes weather symbols
+    const cacheKey = `weather_v6_${roundedLat}_${roundedLon}`; // v6 fixes timezone handling
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -150,20 +150,24 @@ serve(async (req) => {
       const dayForecasts: any[] = [];
 
       for (const hour of targetHours) {
-        // Find the closest timeseries entry for this hour
-        const targetTime = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00Z`;
+        // Use local Norwegian time (UTC+1) for matching
+        // yr.no provides forecasts in UTC, but we want to match Norwegian local hours
+        const utcHour = hour - 1; // Norway is UTC+1 in winter
+        const targetTime = `${dateStr}T${utcHour.toString().padStart(2, '0')}:00:00Z`;
         
         let entry = timeseries.find((ts: any) => ts.time === targetTime);
         
         if (!entry) {
-          // Find nearest entry
+          // Find nearest entry within a 2-hour window
           entry = timeseries.find((ts: any) => {
             const tsDate = new Date(ts.time);
             return tsDate.toISOString().split('T')[0] === dateStr && 
-                   tsDate.getUTCHours() >= hour - 1 && 
-                   tsDate.getUTCHours() <= hour + 1;
+                   Math.abs(tsDate.getUTCHours() - utcHour) <= 1;
           });
         }
+        
+        // If still no entry (hour has passed), mark as past
+        const isPastHour = !entry && d === 0;
 
         // Find ocean data for this time
         let oceanEntry = oceanTimeseries.find((ts: any) => ts.time === targetTime);
@@ -171,8 +175,7 @@ serve(async (req) => {
           oceanEntry = oceanTimeseries.find((ts: any) => {
             const tsDate = new Date(ts.time);
             return tsDate.toISOString().split('T')[0] === dateStr && 
-                   tsDate.getUTCHours() >= hour - 1 && 
-                   tsDate.getUTCHours() <= hour + 1;
+                   Math.abs(tsDate.getUTCHours() - utcHour) <= 1;
           });
         }
 
@@ -186,11 +189,12 @@ serve(async (req) => {
         
         dayForecasts.push({
           hour,
-          windSpeed: instant?.wind_speed || 0,
-          windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
-          windDirection: instant?.wind_from_direction || 0,
+          windSpeed: instant?.wind_speed ?? (isPastHour ? null : 0),
+          windGust: instant?.wind_speed_of_gust ?? instant?.wind_speed ?? (isPastHour ? null : 0),
+          windDirection: instant?.wind_from_direction ?? (isPastHour ? null : 0),
           temperature: instant?.air_temperature ?? null,
           symbolCode,
+          isPast: isPastHour,
           // Ocean current data (sea_water_speed is in m/s, we convert to cm/s in client)
           seaCurrentSpeed: oceanInstant?.sea_water_speed ?? null,
           seaCurrentDirection: oceanInstant?.sea_water_to_direction ?? null,
