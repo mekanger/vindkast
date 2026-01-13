@@ -195,7 +195,7 @@ const Index = () => {
     <div className="min-h-screen gradient-sky overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-lg bg-background/80 border-b border-border/50">
-        <div className="container px-4 sm:px-6 lg:px-8 py-4">
+        <div className="container max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -245,7 +245,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 sm:px-6 lg:px-8 py-8">
+      <main className="container max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {locations.length === 0 ? (
           <EmptyState />
         ) : (
@@ -265,7 +265,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-6 border-t border-border/50 bg-background/50 backdrop-blur-sm">
-        <div className="container px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
+        <div className="container max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
           <p>Værdata fra yr.no, levert av Meteorologisk institutt og NRK</p>
         </div>
       </footer>
