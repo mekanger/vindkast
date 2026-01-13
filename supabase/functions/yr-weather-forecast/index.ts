@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v8_${roundedLat}_${roundedLon}`; // v8 fixes tidal harbor lookup
+    const cacheKey = `weather_v9_${roundedLat}_${roundedLon}`; // v9 adds sunrise/sunset
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -250,12 +250,61 @@ serve(async (req) => {
       console.log('No tidal harbor within 50km of location');
     }
 
+    // Fetch sunrise/sunset data for all 3 days
+    const sunData: Map<string, { sunrise: string; sunset: string }> = new Map();
+    try {
+      const now = new Date();
+      // Build date range for sunrise API
+      const startDate = now.toISOString().split('T')[0];
+      const endDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const sunUrl = `https://api.met.no/weatherapi/sunrise/3.0/sun?lat=${lat}&lon=${lon}&date=${startDate}&offset=+01:00`;
+      const sunResponse = await fetch(sunUrl, {
+        headers: { 'User-Agent': userAgent },
+      });
+      
+      if (sunResponse.ok) {
+        const sunJson = await sunResponse.json();
+        // API returns data for requested date
+        if (sunJson.properties?.sunrise?.time && sunJson.properties?.sunset?.time) {
+          sunData.set(startDate, {
+            sunrise: sunJson.properties.sunrise.time,
+            sunset: sunJson.properties.sunset.time,
+          });
+        }
+        console.log('Sun data fetched for', startDate);
+      }
+      
+      // Fetch for next 2 days
+      for (let d = 1; d <= 2; d++) {
+        const dateObj = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+        const dateStr = dateObj.toISOString().split('T')[0];
+        const dayUrl = `https://api.met.no/weatherapi/sunrise/3.0/sun?lat=${lat}&lon=${lon}&date=${dateStr}&offset=+01:00`;
+        const dayResponse = await fetch(dayUrl, {
+          headers: { 'User-Agent': userAgent },
+        });
+        
+        if (dayResponse.ok) {
+          const dayJson = await dayResponse.json();
+          if (dayJson.properties?.sunrise?.time && dayJson.properties?.sunset?.time) {
+            sunData.set(dateStr, {
+              sunrise: dayJson.properties.sunrise.time,
+              sunset: dayJson.properties.sunset.time,
+            });
+          }
+        }
+      }
+      console.log('Sun data entries:', sunData.size);
+    } catch (sunError) {
+      console.log('Sunrise/sunset fetch failed:', sunError);
+    }
+
     // Get target hours: 10, 12, 14, 16, 18, 20
     const targetHours = [10, 12, 14, 16, 18, 20];
     
     // Get the next 3 days
     const now = new Date();
-    const days: { date: string; forecasts: any[] }[] = [];
+    const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string }[] = [];
 
     for (let d = 0; d < 3; d++) {
       const targetDate = new Date(now);
@@ -350,9 +399,14 @@ serve(async (req) => {
         });
       }
 
+      // Get sunrise/sunset for this day
+      const daySun = sunData.get(dateStr);
+      
       days.push({
         date: dateStr,
         forecasts: dayForecasts,
+        sunrise: daySun?.sunrise,
+        sunset: daySun?.sunset,
       });
     }
 

@@ -72,6 +72,8 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
     return {
       date: day.date, // Keep as ISO format (YYYY-MM-DD) for matching
       forecasts,
+      sunrise: day.sunrise ?? undefined,
+      sunset: day.sunset ?? undefined,
     };
   });
 
