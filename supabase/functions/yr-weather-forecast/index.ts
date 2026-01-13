@@ -3,6 +3,67 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CACHE_TTL_MINUTES = 60; // 1 hour cache
 
+// Available harbors for tidal data with their coordinates
+const TIDAL_HARBORS: { name: string; lat: number; lon: number }[] = [
+  { name: 'andenes', lat: 69.3267, lon: 16.1192 },
+  { name: 'bergen', lat: 60.3913, lon: 5.3221 },
+  { name: 'bodø', lat: 67.2804, lon: 14.4049 },
+  { name: 'bruravik', lat: 60.3617, lon: 6.8067 },
+  { name: 'hammerfest', lat: 70.6634, lon: 23.6821 },
+  { name: 'harstad', lat: 68.7983, lon: 16.5417 },
+  { name: 'heimsjø', lat: 63.4267, lon: 9.1017 },
+  { name: 'helgeroa', lat: 58.9900, lon: 9.8567 },
+  { name: 'honningsvåg', lat: 70.9827, lon: 25.9706 },
+  { name: 'kabelvåg', lat: 68.2117, lon: 14.4800 },
+  { name: 'kristiansund', lat: 63.1108, lon: 7.7278 },
+  { name: 'leirvik', lat: 59.7783, lon: 5.5083 },
+  { name: 'mausund', lat: 63.8700, lon: 8.6650 },
+  { name: 'måløy', lat: 61.9333, lon: 5.1167 },
+  { name: 'narvik', lat: 68.4385, lon: 17.4273 },
+  { name: 'ny-ålesund', lat: 78.9233, lon: 11.9267 },
+  { name: 'oscarsborg', lat: 59.6783, lon: 10.6050 },
+  { name: 'oslo', lat: 59.9139, lon: 10.7522 },
+  { name: 'rørvik', lat: 64.8617, lon: 11.2383 },
+  { name: 'sandnes', lat: 58.8517, lon: 5.7350 },
+  { name: 'sirevåg', lat: 58.4883, lon: 5.9217 },
+  { name: 'solumstrand', lat: 59.7417, lon: 10.2217 },
+  { name: 'stavanger', lat: 58.9700, lon: 5.7331 },
+  { name: 'tregde', lat: 58.0083, lon: 7.5450 },
+  { name: 'tromsø', lat: 69.6492, lon: 18.9560 },
+  { name: 'trondheim', lat: 63.4305, lon: 10.3951 },
+  { name: 'træna', lat: 66.4950, lon: 12.0917 },
+  { name: 'vardø', lat: 70.3706, lon: 31.1089 },
+  { name: 'viker', lat: 59.0367, lon: 10.9500 },
+  { name: 'ålesund', lat: 62.4722, lon: 6.1495 },
+];
+
+// Find nearest harbor within max distance (km)
+function findNearestHarbor(lat: number, lon: number, maxDistanceKm: number = 50): string | null {
+  const toRad = (deg: number) => deg * Math.PI / 180;
+  
+  let nearestHarbor: string | null = null;
+  let minDistance = Infinity;
+  
+  for (const harbor of TIDAL_HARBORS) {
+    // Haversine formula for distance
+    const R = 6371; // Earth's radius in km
+    const dLat = toRad(harbor.lat - lat);
+    const dLon = toRad(harbor.lon - lon);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(toRad(lat)) * Math.cos(toRad(harbor.lat)) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    
+    if (distance < minDistance && distance <= maxDistanceKm) {
+      minDistance = distance;
+      nearestHarbor = harbor.name;
+    }
+  }
+  
+  return nearestHarbor;
+}
+
 // Allowed origins for CORS
 const allowedOrigins = [
   Deno.env.get('SUPABASE_URL') || '',
@@ -74,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v7_${roundedLat}_${roundedLon}`; // v7 adds tidal data
+    const cacheKey = `weather_v8_${roundedLat}_${roundedLon}`; // v8 fixes tidal harbor lookup
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -135,23 +196,58 @@ serve(async (req) => {
       console.log('Ocean forecast fetch failed (location likely inland):', oceanError);
     }
 
-    // Fetch tidal data (might fail for locations without tide data)
-    let tidalData: any[] = [];
-    try {
-      const tidalUrl = `https://api.met.no/weatherapi/tidalwater/1.1?lat=${lat}&lon=${lon}`;
-      const tidalResponse = await fetch(tidalUrl, {
-        headers: { 'User-Agent': userAgent },
-      });
-      
-      if (tidalResponse.ok) {
-        const tidalJson = await tidalResponse.json();
-        tidalData = tidalJson.locationdata?.data || [];
-        console.log('Tidal data fetched successfully, entries:', tidalData.length);
-      } else {
-        console.log('Tidal data not available for this location (status:', tidalResponse.status, ')');
+    // Fetch tidal data using nearest harbor
+    // Tidal API uses plaintext format with specific harbors, not lat/lon
+    let tidalData: { year: number; month: number; day: number; hour: number; minute: number; total: number }[] = [];
+    const nearestHarbor = findNearestHarbor(lat, lon);
+    
+    if (nearestHarbor) {
+      try {
+        const tidalUrl = `https://api.met.no/weatherapi/tidalwater/1.1/?harbor=${nearestHarbor}`;
+        const tidalResponse = await fetch(tidalUrl, {
+          headers: { 'User-Agent': userAgent },
+        });
+        
+        if (tidalResponse.ok) {
+          const tidalText = await tidalResponse.text();
+          // Parse the plaintext response
+          // Format: AAR MND DAG TIM MIN  SURGE  TIDE   TOTAL  0p     25p    50p    75p    100p
+          const lines = tidalText.split('\n');
+          for (const line of lines) {
+            const trimmed = line.trim();
+            // Skip header lines and empty lines
+            if (!trimmed || trimmed.startsWith('MET') || trimmed.startsWith('VANN') || 
+                trimmed.startsWith('SIST') || trimmed.startsWith('===') || 
+                trimmed.startsWith('---') || trimmed.startsWith('AAR') ||
+                trimmed.includes('PROGNOSER') || trimmed.includes('STORMFLO') ||
+                /^[A-ZÆØÅ]+$/.test(trimmed)) {
+              continue;
+            }
+            
+            // Parse data line: 2024  10  24  12   0   0.09   0.17   0.26   0.04   0.09   0.09   0.09   0.14
+            const parts = trimmed.split(/\s+/).filter(p => p.length > 0);
+            if (parts.length >= 8) {
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[2], 10);
+              const hour = parseInt(parts[3], 10);
+              const minute = parseInt(parts[4], 10);
+              const total = parseFloat(parts[7]); // TOTAL column (meters above mean sea level)
+              
+              if (!isNaN(year) && !isNaN(month) && !isNaN(day) && !isNaN(hour) && !isNaN(total)) {
+                tidalData.push({ year, month, day, hour, minute, total });
+              }
+            }
+          }
+          console.log('Tidal data fetched from', nearestHarbor, '- entries:', tidalData.length);
+        } else {
+          console.log('Tidal data not available for harbor', nearestHarbor, '(status:', tidalResponse.status, ')');
+        }
+      } catch (tidalError) {
+        console.log('Tidal fetch failed:', tidalError);
       }
-    } catch (tidalError) {
-      console.log('Tidal fetch failed:', tidalError);
+    } else {
+      console.log('No tidal harbor within 50km of location');
     }
 
     // Get target hours: 10, 12, 14, 16, 18, 20
@@ -199,21 +295,29 @@ serve(async (req) => {
         }
 
         // Find tidal data for this time
-        // Tidal API uses format: "2024-01-15T10:00:00+01:00"
-        let tidalEntry = null;
-        const localTimeStr = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00+01:00`;
-        tidalEntry = tidalData.find((td: any) => td.time === localTimeStr);
+        // Tidal data is parsed from plaintext with year, month, day, hour, minute, total
+        const dateParts = dateStr.split('-');
+        const targetYear = parseInt(dateParts[0], 10);
+        const targetMonth = parseInt(dateParts[1], 10);
+        const targetDay = parseInt(dateParts[2], 10);
+        
+        // Find tidal entry matching hour (ignore minutes, find nearest hour)
+        let tidalEntry = tidalData.find(td => 
+          td.year === targetYear && 
+          td.month === targetMonth && 
+          td.day === targetDay && 
+          td.hour === hour && 
+          td.minute === 0
+        );
+        
         if (!tidalEntry) {
-          // Try to find nearest within 1 hour
-          tidalEntry = tidalData.find((td: any) => {
-            try {
-              const tdDate = new Date(td.time);
-              const targetDate = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00+01:00`);
-              return Math.abs(tdDate.getTime() - targetDate.getTime()) <= 3600000; // 1 hour in ms
-            } catch {
-              return false;
-            }
-          });
+          // Try to find nearest within the hour
+          tidalEntry = tidalData.find(td => 
+            td.year === targetYear && 
+            td.month === targetMonth && 
+            td.day === targetDay && 
+            td.hour === hour
+          );
         }
 
         const instant = entry?.data?.instant?.details;
@@ -224,8 +328,8 @@ serve(async (req) => {
           || entry?.data?.next_6_hours?.summary?.symbol_code 
           || null;
 
-        // Parse tidal value (in cm relative to chart datum)
-        const tidalValue = tidalEntry?.value ? parseFloat(tidalEntry.value) : null;
+        // Parse tidal value (in meters, convert to cm for display)
+        const tidalValue = tidalEntry ? Math.round(tidalEntry.total * 100) : null;
         
         dayForecasts.push({
           hour,
