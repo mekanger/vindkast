@@ -184,6 +184,7 @@ serve(async (req) => {
           windSpeed: instant?.wind_speed || 0,
           windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
           windDirection: instant?.wind_from_direction || 0,
+          temperature: instant?.air_temperature ?? null,
           // Ocean current data (sea_water_speed is in m/s, we convert to cm/s in client)
           seaCurrentSpeed: oceanInstant?.sea_water_speed ?? null,
           seaCurrentDirection: oceanInstant?.sea_water_to_direction ?? null,

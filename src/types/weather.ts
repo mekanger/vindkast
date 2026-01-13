@@ -14,6 +14,7 @@ export interface WindForecast {
   windSpeed: number;
   windGust: number;
   windDirection: number;
+  temperature?: number;  // Celsius
   seaCurrentSpeed?: number;  // cm/s
   seaCurrentDirection?: number;
   waveHeight?: number;  // meters

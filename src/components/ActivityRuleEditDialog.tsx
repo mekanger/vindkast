@@ -33,6 +33,8 @@ interface ActivityRuleEditDialogProps {
     min_gust: number;
     max_gust: number;
     wind_directions?: WindDirection[] | null;
+    min_temp?: number | null;
+    max_temp?: number | null;
   }) => Promise<{ error: Error | null }>;
 }
 
@@ -49,6 +51,8 @@ export const ActivityRuleEditDialog = ({
   const [minGust, setMinGust] = useState<string>('');
   const [maxGust, setMaxGust] = useState<string>('');
   const [windDirections, setWindDirections] = useState<WindDirection[]>([]);
+  const [minTemp, setMinTemp] = useState<string>('');
+  const [maxTemp, setMaxTemp] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unitLabel = getWindUnitLabel(windUnit);
@@ -64,6 +68,8 @@ export const ActivityRuleEditDialog = ({
       setMinGust(minDisplay.toString());
       setMaxGust(maxDisplay.toString());
       setWindDirections(rule.wind_directions || []);
+      setMinTemp(rule.min_temp !== null ? rule.min_temp.toString() : '');
+      setMaxTemp(rule.max_temp !== null ? rule.max_temp.toString() : '');
     }
   }, [rule, windUnit]);
 
@@ -84,8 +90,13 @@ export const ActivityRuleEditDialog = ({
 
     const minGustNum = parseFloat(minGust);
     const maxGustNum = parseFloat(maxGust);
+    const minTempNum = minTemp !== '' ? parseFloat(minTemp) : null;
+    const maxTempNum = maxTemp !== '' ? parseFloat(maxTemp) : null;
 
     if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum < 0 || maxGustNum < 0 || minGustNum > maxGustNum) return;
+
+    // Validate temperature range if both are set
+    if (minTempNum !== null && maxTempNum !== null && minTempNum > maxTempNum) return;
 
     // Convert from display unit to m/s for storage
     const minGustMs = windUnit === 'knots' ? minGustNum / MS_TO_KNOTS : minGustNum;
@@ -100,6 +111,8 @@ export const ActivityRuleEditDialog = ({
       min_gust: minGustMs,
       max_gust: maxGustMs,
       wind_directions: windDirections.length > 0 ? windDirections : null,
+      min_temp: minTempNum,
+      max_temp: maxTempNum,
     });
 
     setIsSubmitting(false);
@@ -109,10 +122,19 @@ export const ActivityRuleEditDialog = ({
     }
   };
 
+  const tempRangeValid = () => {
+    const minTempNum = minTemp !== '' ? parseFloat(minTemp) : null;
+    const maxTempNum = maxTemp !== '' ? parseFloat(maxTemp) : null;
+    if (minTempNum !== null && maxTempNum !== null) {
+      return minTempNum <= maxTempNum;
+    }
+    return true;
+  };
+
   const isValid = locationId && activity && minGust !== '' && maxGust !== '' && 
     !isNaN(parseFloat(minGust)) && !isNaN(parseFloat(maxGust)) &&
     parseFloat(minGust) >= 0 && parseFloat(maxGust) >= 0 &&
-    parseFloat(minGust) <= parseFloat(maxGust);
+    parseFloat(minGust) <= parseFloat(maxGust) && tempRangeValid();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -214,6 +236,38 @@ export const ActivityRuleEditDialog = ({
               <p className="text-xs text-muted-foreground mt-1">
                 Hvis ingen er valgt, matcher regelen alle vindretninger
               </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-minTemp" className="text-sm font-medium">
+                  Min temperatur (°C)
+                </Label>
+                <Input
+                  id="edit-minTemp"
+                  type="number"
+                  step="1"
+                  value={minTemp}
+                  onChange={(e) => setMinTemp(e.target.value)}
+                  placeholder="Valgfritt"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-maxTemp" className="text-sm font-medium">
+                  Max temperatur (°C)
+                </Label>
+                <Input
+                  id="edit-maxTemp"
+                  type="number"
+                  step="1"
+                  value={maxTemp}
+                  onChange={(e) => setMaxTemp(e.target.value)}
+                  placeholder="Valgfritt"
+                  className="mt-1"
+                />
+              </div>
             </div>
           </div>
 

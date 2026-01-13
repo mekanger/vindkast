@@ -75,6 +75,17 @@ export const ActivityRuleItem = ({ rule, onEdit, onDelete }: ActivityRuleItemPro
           {rule.wind_directions && rule.wind_directions.length > 0 && (
             <span> • {rule.wind_directions.map(d => WIND_DIRECTION_LABELS[d]).join(', ')}</span>
           )}
+          {(rule.min_temp !== null || rule.max_temp !== null) && (
+            <span>
+              {' • '}
+              {rule.min_temp !== null && rule.max_temp !== null
+                ? `${rule.min_temp}-${rule.max_temp}°C`
+                : rule.min_temp !== null
+                  ? `≥${rule.min_temp}°C`
+                  : `≤${rule.max_temp}°C`
+              }
+            </span>
+          )}
         </p>
       </div>
 

@@ -25,6 +25,8 @@ interface ActivityRuleFormProps {
     min_gust: number;
     max_gust: number;
     wind_directions?: WindDirection[] | null;
+    min_temp?: number | null;
+    max_temp?: number | null;
   }) => Promise<{ error: Error | null }>;
 }
 
@@ -35,6 +37,8 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
   const [minGust, setMinGust] = useState<string>('');
   const [maxGust, setMaxGust] = useState<string>('');
   const [windDirections, setWindDirections] = useState<WindDirection[]>([]);
+  const [minTemp, setMinTemp] = useState<string>('');
+  const [maxTemp, setMaxTemp] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedLocation = locations.find(l => l.id === locationId);
@@ -55,8 +59,13 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
 
     const minGustNum = parseFloat(minGust);
     const maxGustNum = parseFloat(maxGust);
+    const minTempNum = minTemp !== '' ? parseFloat(minTemp) : null;
+    const maxTempNum = maxTemp !== '' ? parseFloat(maxTemp) : null;
 
     if (isNaN(minGustNum) || isNaN(maxGustNum) || minGustNum < 0 || maxGustNum < 0 || minGustNum > maxGustNum) return;
+
+    // Validate temperature range if both are set
+    if (minTempNum !== null && maxTempNum !== null && minTempNum > maxTempNum) return;
 
     // Convert from display unit to m/s for storage
     const minGustMs = windUnit === 'knots' ? minGustNum / MS_TO_KNOTS : minGustNum;
@@ -71,6 +80,8 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
       min_gust: minGustMs,
       max_gust: maxGustMs,
       wind_directions: windDirections.length > 0 ? windDirections : null,
+      min_temp: minTempNum,
+      max_temp: maxTempNum,
     });
 
     setIsSubmitting(false);
@@ -82,13 +93,24 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
       setMinGust('');
       setMaxGust('');
       setWindDirections([]);
+      setMinTemp('');
+      setMaxTemp('');
     }
+  };
+
+  const tempRangeValid = () => {
+    const minTempNum = minTemp !== '' ? parseFloat(minTemp) : null;
+    const maxTempNum = maxTemp !== '' ? parseFloat(maxTemp) : null;
+    if (minTempNum !== null && maxTempNum !== null) {
+      return minTempNum <= maxTempNum;
+    }
+    return true;
   };
 
   const isValid = locationId && activity && minGust !== '' && maxGust !== '' && 
     !isNaN(parseFloat(minGust)) && !isNaN(parseFloat(maxGust)) &&
     parseFloat(minGust) >= 0 && parseFloat(maxGust) >= 0 &&
-    parseFloat(minGust) <= parseFloat(maxGust);
+    parseFloat(minGust) <= parseFloat(maxGust) && tempRangeValid();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-muted/50 rounded-lg">
@@ -180,6 +202,36 @@ export const ActivityRuleForm = ({ locations, onSubmit }: ActivityRuleFormProps)
           <p className="text-xs text-muted-foreground mt-1">
             Hvis ingen er valgt, matcher regelen alle vindretninger
           </p>
+        </div>
+
+        <div>
+          <Label htmlFor="minTemp" className="text-sm font-medium">
+            Min temperatur (°C)
+          </Label>
+          <Input
+            id="minTemp"
+            type="number"
+            step="1"
+            value={minTemp}
+            onChange={(e) => setMinTemp(e.target.value)}
+            placeholder="Valgfritt"
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="maxTemp" className="text-sm font-medium">
+            Max temperatur (°C)
+          </Label>
+          <Input
+            id="maxTemp"
+            type="number"
+            step="1"
+            value={maxTemp}
+            onChange={(e) => setMaxTemp(e.target.value)}
+            placeholder="Valgfritt"
+            className="mt-1"
+          />
         </div>
       </div>
 

@@ -47,21 +47,58 @@ export function getMaxGustForDay(forecast: DayForecast | undefined): number {
 }
 
 /**
+ * Check if temperature matches the rule's temperature constraints
+ * If min_temp is set: temperature must be >= min_temp
+ * If max_temp is set: temperature must be <= max_temp
+ * If neither is set: no temperature restrictions
+ */
+function matchesTemperature(
+  temperature: number | undefined | null,
+  minTemp: number | null,
+  maxTemp: number | null
+): boolean {
+  // If no temperature constraints are set, always match
+  if (minTemp === null && maxTemp === null) {
+    return true;
+  }
+  
+  // If we have constraints but no temperature data, don't match
+  if (temperature === undefined || temperature === null) {
+    return false;
+  }
+  
+  // Check min constraint
+  if (minTemp !== null && temperature < minTemp) {
+    return false;
+  }
+  
+  // Check max constraint
+  if (maxTemp !== null && temperature > maxTemp) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
  * Check if any of the display hours has a gust value within the given range
- * and optionally matches the wind direction
+ * and optionally matches the wind direction and temperature
  */
 function hasMatchingConditions(
   forecast: DayForecast,
   minGust: number,
   maxGust: number,
-  windDirections: WindDirection[] | null
+  windDirections: WindDirection[] | null,
+  minTemp: number | null = null,
+  maxTemp: number | null = null
 ): boolean {
   const relevantForecasts = forecast.forecasts.filter(f => ALL_DISPLAY_HOURS.includes(f.hour));
   
   return relevantForecasts.some(f => 
     f.windGust >= minGust && 
     f.windGust <= maxGust &&
-    matchesWindDirection(f.windDirection, windDirections)
+    matchesWindDirection(f.windDirection, windDirections) &&
+    matchesTemperature(f.temperature, minTemp, maxTemp)
   );
 }
 
@@ -80,7 +117,7 @@ export function findMatchingActivity(
   for (const rule of rules) {
     if (
       rule.location_id === locationId &&
-      hasMatchingConditions(forecast, rule.min_gust, rule.max_gust, rule.wind_directions)
+      hasMatchingConditions(forecast, rule.min_gust, rule.max_gust, rule.wind_directions, rule.min_temp, rule.max_temp)
     ) {
       return rule.activity;
     }
@@ -104,7 +141,7 @@ export function findAllMatchingActivities(
   for (const rule of rules) {
     if (
       rule.location_id === locationId &&
-      hasMatchingConditions(forecast, rule.min_gust, rule.max_gust, rule.wind_directions)
+      hasMatchingConditions(forecast, rule.min_gust, rule.max_gust, rule.wind_directions, rule.min_temp, rule.max_temp)
     ) {
       matchingActivities.add(rule.activity);
     }
@@ -129,7 +166,7 @@ export function findDailyActivity(
     );
     if (!locationData || !locationData.forecast) continue;
     
-    if (hasMatchingConditions(locationData.forecast, rule.min_gust, rule.max_gust, rule.wind_directions)) {
+    if (hasMatchingConditions(locationData.forecast, rule.min_gust, rule.max_gust, rule.wind_directions, rule.min_temp, rule.max_temp)) {
       return {
         activity: rule.activity,
         locationName: rule.location_name,

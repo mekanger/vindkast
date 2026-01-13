@@ -13,6 +13,8 @@ export interface ActivityRule {
   priority: number;
   created_at: string;
   wind_directions: WindDirection[] | null;
+  min_temp: number | null;
+  max_temp: number | null;
 }
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {
