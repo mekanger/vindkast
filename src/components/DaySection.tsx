@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Loader2, Thermometer } from "lucide-react";
+import { Calendar, MapPin, Loader2, Thermometer, Sunrise, Sunset } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
@@ -299,6 +299,26 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                         );
                       })}
                     </div>
+
+                    {/* Sunrise/Sunset row - only show if data is available */}
+                    {(forecast.sunrise || forecast.sunset) && (
+                      <div className="mt-3 pt-2 border-t border-border/50">
+                        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                          {forecast.sunrise && (
+                            <div className="flex items-center gap-1">
+                              <Sunrise className="w-3.5 h-3.5 text-amber-500" />
+                              <span>{format(new Date(forecast.sunrise), "HH:mm")}</span>
+                            </div>
+                          )}
+                          {forecast.sunset && (
+                            <div className="flex items-center gap-1">
+                              <Sunset className="w-3.5 h-3.5 text-orange-500" />
+                              <span>{format(new Date(forecast.sunset), "HH:mm")}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

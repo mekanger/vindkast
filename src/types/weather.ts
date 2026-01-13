@@ -26,6 +26,8 @@ export interface WindForecast {
 export interface DayForecast {
   date: string;
   forecasts: WindForecast[];
+  sunrise?: string;  // ISO time string
+  sunset?: string;   // ISO time string
 }
 
 export interface LocationWeather {
