@@ -74,7 +74,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v6_${roundedLat}_${roundedLon}`; // v6 fixes timezone handling
+    const cacheKey = `weather_v7_${roundedLat}_${roundedLon}`; // v7 adds tidal data
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -135,6 +135,25 @@ serve(async (req) => {
       console.log('Ocean forecast fetch failed (location likely inland):', oceanError);
     }
 
+    // Fetch tidal data (might fail for locations without tide data)
+    let tidalData: any[] = [];
+    try {
+      const tidalUrl = `https://api.met.no/weatherapi/tidalwater/1.1?lat=${lat}&lon=${lon}`;
+      const tidalResponse = await fetch(tidalUrl, {
+        headers: { 'User-Agent': userAgent },
+      });
+      
+      if (tidalResponse.ok) {
+        const tidalJson = await tidalResponse.json();
+        tidalData = tidalJson.locationdata?.data || [];
+        console.log('Tidal data fetched successfully, entries:', tidalData.length);
+      } else {
+        console.log('Tidal data not available for this location (status:', tidalResponse.status, ')');
+      }
+    } catch (tidalError) {
+      console.log('Tidal fetch failed:', tidalError);
+    }
+
     // Get target hours: 10, 12, 14, 16, 18, 20
     const targetHours = [10, 12, 14, 16, 18, 20];
     
@@ -179,6 +198,24 @@ serve(async (req) => {
           });
         }
 
+        // Find tidal data for this time
+        // Tidal API uses format: "2024-01-15T10:00:00+01:00"
+        let tidalEntry = null;
+        const localTimeStr = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00+01:00`;
+        tidalEntry = tidalData.find((td: any) => td.time === localTimeStr);
+        if (!tidalEntry) {
+          // Try to find nearest within 1 hour
+          tidalEntry = tidalData.find((td: any) => {
+            try {
+              const tdDate = new Date(td.time);
+              const targetDate = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00+01:00`);
+              return Math.abs(tdDate.getTime() - targetDate.getTime()) <= 3600000; // 1 hour in ms
+            } catch {
+              return false;
+            }
+          });
+        }
+
         const instant = entry?.data?.instant?.details;
         const oceanInstant = oceanEntry?.data?.instant?.details;
         
@@ -186,6 +223,9 @@ serve(async (req) => {
         const symbolCode = entry?.data?.next_1_hours?.summary?.symbol_code 
           || entry?.data?.next_6_hours?.summary?.symbol_code 
           || null;
+
+        // Parse tidal value (in cm relative to chart datum)
+        const tidalValue = tidalEntry?.value ? parseFloat(tidalEntry.value) : null;
         
         dayForecasts.push({
           hour,
@@ -201,6 +241,8 @@ serve(async (req) => {
           // Wave data
           waveHeight: oceanInstant?.sea_surface_wave_height ?? null,
           waveDirection: oceanInstant?.sea_surface_wave_from_direction ?? null,
+          // Tidal data (cm relative to chart datum)
+          tidalHeight: tidalValue,
         });
       }
 
