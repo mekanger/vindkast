@@ -81,13 +81,42 @@ function matchesTemperature(
 }
 
 /**
- * Check if any of the display hours has a gust value within the given range
- * and optionally matches the wind direction and temperature
+ * Check if gust matches the rule's gust constraints
+ * If min_gust is set: gust must be >= min_gust
+ * If max_gust is set: gust must be <= max_gust
+ * If neither is set: no gust restrictions (always matches)
+ */
+function matchesGust(
+  gust: number,
+  minGust: number | null,
+  maxGust: number | null
+): boolean {
+  // If no gust constraints are set, always match
+  if (minGust === null && maxGust === null) {
+    return true;
+  }
+  
+  // Check min constraint
+  if (minGust !== null && gust < minGust) {
+    return false;
+  }
+  
+  // Check max constraint
+  if (maxGust !== null && gust > maxGust) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Check if any of the display hours has conditions matching the rule
+ * Gust, wind direction, and temperature constraints are all optional
  */
 function hasMatchingConditions(
   forecast: DayForecast,
-  minGust: number,
-  maxGust: number,
+  minGust: number | null,
+  maxGust: number | null,
   windDirections: WindDirection[] | null,
   minTemp: number | null = null,
   maxTemp: number | null = null
@@ -95,8 +124,7 @@ function hasMatchingConditions(
   const relevantForecasts = forecast.forecasts.filter(f => ALL_DISPLAY_HOURS.includes(f.hour));
   
   return relevantForecasts.some(f => 
-    f.windGust >= minGust && 
-    f.windGust <= maxGust &&
+    matchesGust(f.windGust, minGust, maxGust) &&
     matchesWindDirection(f.windDirection, windDirections) &&
     matchesTemperature(f.temperature, minTemp, maxTemp)
   );

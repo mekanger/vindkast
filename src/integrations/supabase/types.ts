@@ -21,9 +21,9 @@ export type Database = {
           id: string
           location_id: string
           location_name: string
-          max_gust: number
+          max_gust: number | null
           max_temp: number | null
-          min_gust: number
+          min_gust: number | null
           min_temp: number | null
           priority: number
           user_id: string
@@ -35,9 +35,9 @@ export type Database = {
           id?: string
           location_id: string
           location_name: string
-          max_gust: number
+          max_gust?: number | null
           max_temp?: number | null
-          min_gust: number
+          min_gust?: number | null
           min_temp?: number | null
           priority?: number
           user_id: string
@@ -49,9 +49,9 @@ export type Database = {
           id?: string
           location_id?: string
           location_name?: string
-          max_gust?: number
+          max_gust?: number | null
           max_temp?: number | null
-          min_gust?: number
+          min_gust?: number | null
           min_temp?: number | null
           priority?: number
           user_id?: string

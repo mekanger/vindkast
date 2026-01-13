@@ -42,9 +42,21 @@ export const ActivityRuleItem = ({ rule, onEdit, onDelete }: ActivityRuleItemPro
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const minDisplay = convertWindSpeed(rule.min_gust, windUnit).toFixed(0);
-  const maxDisplay = convertWindSpeed(rule.max_gust, windUnit).toFixed(0);
+  const minDisplay = rule.min_gust !== null ? convertWindSpeed(rule.min_gust, windUnit).toFixed(0) : null;
+  const maxDisplay = rule.max_gust !== null ? convertWindSpeed(rule.max_gust, windUnit).toFixed(0) : null;
   const unitLabel = getWindUnitLabel(windUnit);
+
+  // Format gust display based on which values are set
+  const gustDisplay = () => {
+    if (minDisplay !== null && maxDisplay !== null) {
+      return `${minDisplay}-${maxDisplay} ${unitLabel}`;
+    } else if (minDisplay !== null) {
+      return `≥${minDisplay} ${unitLabel}`;
+    } else if (maxDisplay !== null) {
+      return `≤${maxDisplay} ${unitLabel}`;
+    }
+    return null;
+  };
 
   return (
     <div
@@ -71,7 +83,8 @@ export const ActivityRuleItem = ({ rule, onEdit, onDelete }: ActivityRuleItemPro
           {ACTIVITY_LABELS[rule.activity]}
         </p>
         <p className="text-sm text-muted-foreground truncate">
-          {rule.location_name} • {minDisplay}-{maxDisplay} {unitLabel}
+          {rule.location_name}
+          {gustDisplay() && ` • ${gustDisplay()}`}
           {(rule.min_temp !== null || rule.max_temp !== null) && (
             <span>
               {' • '}
