@@ -20,27 +20,28 @@ interface DailyActivityBadgeProps {
 
 export const DailyActivityBadge = ({ activity, locationName }: DailyActivityBadgeProps) => {
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-        <div className="flex items-center gap-4">
-          <img 
-            src={ACTIVITY_IMAGES[activity]} 
-            alt={ACTIVITY_LABELS[activity]}
-            className="w-16 h-16 rounded-lg object-cover"
-          />
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-              Dagens aktivitet
-            </p>
-            <p className="text-lg font-semibold text-foreground">
-              {ACTIVITY_LABELS[activity]}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              @ {locationName}
-            </p>
-          </div>
+    <div className="w-full sm:w-[340px] flex-shrink-0 bg-primary/10 border border-primary/20 rounded-lg p-4">
+      <div className="flex items-center gap-4">
+        <img
+          src={ACTIVITY_IMAGES[activity]}
+          alt={ACTIVITY_LABELS[activity]}
+          loading="lazy"
+          decoding="async"
+          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+        />
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+            Dagens aktivitet
+          </p>
+          <p className="text-lg font-semibold text-foreground truncate">
+            {ACTIVITY_LABELS[activity]}
+          </p>
+          <p className="text-sm text-muted-foreground truncate">
+            @ {locationName}
+          </p>
         </div>
       </div>
     </div>
   );
 };
+
