@@ -215,7 +215,7 @@ export const ActivityRuleEditDialog = ({
                   min="0"
                   value={minGust}
                   onChange={(e) => setMinGust(e.target.value)}
-                  placeholder="0"
+                  placeholder="Valgfritt"
                   className="mt-1"
                 />
               </div>
@@ -231,7 +231,7 @@ export const ActivityRuleEditDialog = ({
                   min="0"
                   value={maxGust}
                   onChange={(e) => setMaxGust(e.target.value)}
-                  placeholder="25"
+                  placeholder="Valgfritt"
                   className="mt-1"
                 />
               </div>
