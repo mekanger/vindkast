@@ -101,7 +101,7 @@ export const ActivityRulesManager = ({ locations, rules, onRulesChange }: Activi
             <span className="hidden sm:inline">Aktiviteter</span>
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent side="right" className="w-[90vw] max-w-md overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Aktiviteter</SheetTitle>
             <SheetDescription>
