@@ -74,7 +74,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v4_${roundedLat}_${roundedLon}`; // v4 includes temperature
+    const cacheKey = `weather_v5_${roundedLat}_${roundedLon}`; // v5 includes weather symbols
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -179,12 +179,18 @@ serve(async (req) => {
         const instant = entry?.data?.instant?.details;
         const oceanInstant = oceanEntry?.data?.instant?.details;
         
+        // Get weather symbol from next_1_hours (or next_6_hours as fallback)
+        const symbolCode = entry?.data?.next_1_hours?.summary?.symbol_code 
+          || entry?.data?.next_6_hours?.summary?.symbol_code 
+          || null;
+        
         dayForecasts.push({
           hour,
           windSpeed: instant?.wind_speed || 0,
           windGust: instant?.wind_speed_of_gust || instant?.wind_speed || 0,
           windDirection: instant?.wind_from_direction || 0,
           temperature: instant?.air_temperature ?? null,
+          symbolCode,
           // Ocean current data (sea_water_speed is in m/s, we convert to cm/s in client)
           seaCurrentSpeed: oceanInstant?.sea_water_speed ?? null,
           seaCurrentDirection: oceanInstant?.sea_water_to_direction ?? null,
