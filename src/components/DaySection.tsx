@@ -278,29 +278,61 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                     {(forecast.sunrise || forecast.sunset || (forecast.tidalExtremes && forecast.tidalExtremes.length > 0)) && (
                       <div className="mt-3 pt-2 border-t border-border/50">
                         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground flex-wrap">
-                          {forecast.tidalExtremes && forecast.tidalExtremes.map((extreme, idx) => (
-                            <div key={idx} className="flex items-center gap-1">
-                              <TidalIcon 
-                                type={extreme.type} 
-                                className="w-4 h-4 text-sky-500" 
-                              />
-                              <span>
-                                {extreme.type === 'high' ? 'Flo' : 'Fjære'} {extreme.time}
-                              </span>
-                            </div>
-                          ))}
-                          {forecast.sunrise && (
-                            <div className="flex items-center gap-1">
-                              <Sunrise className="w-3.5 h-3.5 text-amber-500" />
-                              <span>{format(new Date(forecast.sunrise), "HH:mm")}</span>
-                            </div>
-                          )}
-                          {forecast.sunset && (
-                            <div className="flex items-center gap-1">
-                              <Sunset className="w-3.5 h-3.5 text-orange-500" />
-                              <span>{format(new Date(forecast.sunset), "HH:mm")}</span>
-                            </div>
-                          )}
+                          {(() => {
+                            // Build array of all time-based events
+                            const events: { type: 'sunrise' | 'sunset' | 'high' | 'low'; time: string; sortTime: Date }[] = [];
+                            
+                            if (forecast.sunrise) {
+                              const sunriseDate = new Date(forecast.sunrise);
+                              events.push({ type: 'sunrise', time: format(sunriseDate, "HH:mm"), sortTime: sunriseDate });
+                            }
+                            if (forecast.sunset) {
+                              const sunsetDate = new Date(forecast.sunset);
+                              events.push({ type: 'sunset', time: format(sunsetDate, "HH:mm"), sortTime: sunsetDate });
+                            }
+                            if (forecast.tidalExtremes) {
+                              forecast.tidalExtremes.forEach((extreme) => {
+                                // Parse time string like "06:30" into a sortable date
+                                const [hours, minutes] = extreme.time.split(':').map(Number);
+                                const tidalDate = new Date();
+                                tidalDate.setHours(hours, minutes, 0, 0);
+                                events.push({ type: extreme.type, time: extreme.time, sortTime: tidalDate });
+                              });
+                            }
+                            
+                            // Sort by time
+                            events.sort((a, b) => a.sortTime.getTime() - b.sortTime.getTime());
+                            
+                            return events.map((event, idx) => {
+                              if (event.type === 'sunrise') {
+                                return (
+                                  <div key={`sunrise-${idx}`} className="flex items-center gap-1">
+                                    <Sunrise className="w-3.5 h-3.5 text-amber-500" />
+                                    <span>{event.time}</span>
+                                  </div>
+                                );
+                              } else if (event.type === 'sunset') {
+                                return (
+                                  <div key={`sunset-${idx}`} className="flex items-center gap-1">
+                                    <Sunset className="w-3.5 h-3.5 text-orange-500" />
+                                    <span>{event.time}</span>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div key={`tidal-${idx}`} className="flex items-center gap-1">
+                                    <TidalIcon 
+                                      type={event.type} 
+                                      className="w-4 h-4 text-sky-500" 
+                                    />
+                                    <span>
+                                      {event.type === 'high' ? 'Flo' : 'Fjære'} {event.time}
+                                    </span>
+                                  </div>
+                                );
+                              }
+                            });
+                          })()}
                         </div>
                       </div>
                     )}
