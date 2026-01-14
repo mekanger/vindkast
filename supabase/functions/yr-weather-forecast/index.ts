@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v12_${roundedLat}_${roundedLon}`; // v12 uses local maxima/minima for accurate tidal extremes
+    const cacheKey = `weather_v13_${roundedLat}_${roundedLon}`; // v13 improves tidal extreme detection (prominence + min-gap)
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -307,18 +307,27 @@ serve(async (req) => {
     const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string; tidalExtremes?: { time: string; type: 'high' | 'low'; height: number }[] }[] = [];
 
     // Helper function to find tidal extremes (flo/fjære) for a specific date in the time window 08:00–20:00.
-    // Uses local maxima (flo) and minima (fjære) detection for accurate tide times.
+    // The raw tidal series has small "wiggles" that can create impossible flo/fjære pairs minutes apart.
+    // Strategy:
+    // 1) Light smoothing (moving average)
+    // 2) Find candidate turning points (max/min)
+    // 3) Require minimum prominence (cm) and a minimum time gap between events
     const findTidalExtremes = (targetYear: number, targetMonth: number, targetDay: number) => {
       const WINDOW_START_MIN = 8 * 60;
       const WINDOW_END_MIN = 20 * 60;
 
-      // Get ALL tidal data for the day (including hours outside window for accurate peak detection)
-      const allDayData = tidalData
+      // Tuning knobs
+      const SMOOTH_RADIUS = 2; // 5-point moving average (good for 10-min data)
+      const PROMINENCE_M = 0.06; // 6 cm
+      const PROM_WINDOW_MIN = 180; // +/- 3 hours for prominence calculation
+      const MIN_GAP_MIN = 120; // at least 2 hours between any two events
+
+      const day = tidalData
         .filter((td) => td.year === targetYear && td.month === targetMonth && td.day === targetDay)
         .map((td) => ({ ...td, minutes: td.hour * 60 + td.minute }))
         .sort((a, b) => a.minutes - b.minutes);
 
-      if (allDayData.length < 3) return [];
+      if (day.length < 7) return [];
 
       const formatTime = (m: number) => {
         const hh = Math.floor(m / 60);
@@ -326,42 +335,103 @@ serve(async (req) => {
         return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`;
       };
 
-      const extremes: { time: string; type: 'high' | 'low'; height: number; minutes: number }[] = [];
+      // Determine sampling step (expected 10 minutes, but don't assume)
+      const stepMin = Math.max(1, Math.round((day[1].minutes - day[0].minutes) || 10));
+      const promWindowPoints = Math.max(1, Math.round(PROM_WINDOW_MIN / stepMin));
 
-      // Find local maxima (flo) and minima (fjære) by comparing with neighbors
-      for (let i = 1; i < allDayData.length - 1; i++) {
-        const prev = allDayData[i - 1];
-        const curr = allDayData[i];
-        const next = allDayData[i + 1];
+      const values = day.map((d) => d.total);
 
-        // Only include extremes within the display window
-        if (curr.minutes < WINDOW_START_MIN || curr.minutes > WINDOW_END_MIN) continue;
+      const smoothAt = (idx: number) => {
+        const start = Math.max(0, idx - SMOOTH_RADIUS);
+        const end = Math.min(values.length - 1, idx + SMOOTH_RADIUS);
+        let sum = 0;
+        let count = 0;
+        for (let j = start; j <= end; j++) {
+          sum += values[j];
+          count++;
+        }
+        return sum / count;
+      };
 
-        // Local maximum (flo) - current is higher than both neighbors
-        if (curr.total > prev.total && curr.total > next.total) {
-          extremes.push({
-            time: formatTime(curr.minutes),
-            type: 'high',
-            height: Math.round(curr.total * 100),
-            minutes: curr.minutes,
-          });
+      const smooth = values.map((_, i) => smoothAt(i));
+
+      type Candidate = {
+        minutes: number;
+        type: 'high' | 'low';
+        totalM: number;
+        prominenceM: number;
+      };
+
+      const candidates: Candidate[] = [];
+
+      for (let i = 1; i < day.length - 1; i++) {
+        const m = day[i].minutes;
+        if (m < WINDOW_START_MIN || m > WINDOW_END_MIN) continue;
+
+        const prev = smooth[i - 1];
+        const curr = smooth[i];
+        const next = smooth[i + 1];
+
+        const wStart = Math.max(0, i - promWindowPoints);
+        const wEnd = Math.min(day.length - 1, i + promWindowPoints);
+
+        // Pre-compute window min/max for prominence
+        let wMin = Infinity;
+        let wMax = -Infinity;
+        for (let j = wStart; j <= wEnd; j++) {
+          const v = smooth[j];
+          if (v < wMin) wMin = v;
+          if (v > wMax) wMax = v;
         }
 
-        // Local minimum (fjære) - current is lower than both neighbors
-        if (curr.total < prev.total && curr.total < next.total) {
-          extremes.push({
-            time: formatTime(curr.minutes),
-            type: 'low',
-            height: Math.round(curr.total * 100),
-            minutes: curr.minutes,
-          });
+        // Candidate high: turning point from rising to falling
+        if (curr >= prev && curr > next) {
+          const prom = curr - wMin;
+          if (prom >= PROMINENCE_M) {
+            candidates.push({ minutes: m, type: 'high', totalM: curr, prominenceM: prom });
+          }
+        }
+
+        // Candidate low: turning point from falling to rising
+        if (curr <= prev && curr < next) {
+          const prom = wMax - curr;
+          if (prom >= PROMINENCE_M) {
+            candidates.push({ minutes: m, type: 'low', totalM: curr, prominenceM: prom });
+          }
         }
       }
 
-      // Sort by time and return without the internal 'minutes' field
-      return extremes
-        .sort((a, b) => a.minutes - b.minutes)
-        .map(({ time, type, height }) => ({ time, type, height }));
+      if (candidates.length === 0) return [];
+
+      // Sort by time and remove "too-close" wiggles by keeping the more prominent candidate
+      candidates.sort((a, b) => a.minutes - b.minutes);
+
+      const picked: Candidate[] = [];
+      for (const c of candidates) {
+        const last = picked[picked.length - 1];
+        if (!last) {
+          picked.push(c);
+          continue;
+        }
+
+        if (c.minutes - last.minutes < MIN_GAP_MIN) {
+          // Keep whichever is more "real"
+          const lastScore = last.prominenceM;
+          const curScore = c.prominenceM;
+          if (curScore > lastScore) {
+            picked[picked.length - 1] = c;
+          }
+        } else {
+          picked.push(c);
+        }
+      }
+
+      // Convert to response shape
+      return picked.map((p) => ({
+        time: formatTime(p.minutes),
+        type: p.type,
+        height: Math.round(p.totalM * 100),
+      }));
     };
 
     for (let d = 0; d < 3; d++) {
