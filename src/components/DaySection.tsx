@@ -1,11 +1,10 @@
-import { Calendar, MapPin, Loader2, Thermometer, Sunrise, Sunset } from "lucide-react";
+import { Calendar, MapPin, Loader2, Thermometer, Sunrise, Sunset, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { WaveBadge } from "./WaveBadge";
-import { TidalBadge } from "./TidalBadge";
 import { TemperatureBadge } from "./TemperatureBadge";
 import { WeatherIcon } from "./WeatherIcon";
 import { DailyActivityBadge } from "./DailyActivityBadge";
@@ -234,32 +233,6 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                       </div>
                     )}
 
-                    {/* Tidal height row - only show if any hour has data */}
-                    {forecast.forecasts.some(f => f.tidalHeight != null) && (
-                      <div className={`grid gap-1 sm:gap-2 items-center mb-1`} style={{ gridTemplateColumns: `auto repeat(${displayHours.length}, 1fr)` }}>
-                        <div className="w-12 sm:w-16 text-xs text-muted-foreground font-medium">Tidevann<br /><span className="font-normal">(cm)</span></div>
-                        {displayHours.map((hour, hourIndex) => {
-                          const hourForecast = forecast.forecasts.find(f => f.hour === hour);
-                          // Get previous hour's tidal height for trend calculation
-                          const prevHour = displayHours[hourIndex - 1];
-                          const prevForecast = prevHour ? forecast.forecasts.find(f => f.hour === prevHour) : undefined;
-                          const previousHeight = prevForecast?.tidalHeight;
-                          
-                          return (
-                            <div key={hour} className="text-center">
-                              {hourForecast?.tidalHeight != null ? (
-                                <TidalBadge 
-                                  height={hourForecast.tidalHeight} 
-                                  previousHeight={previousHeight}
-                                />
-                              ) : (
-                                <span className="text-muted-foreground text-xs">-</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
 
                     {/* Temperature row - only show if any hour has data */}
                     {forecast.forecasts.some(f => f.temperature != null) && (
@@ -300,10 +273,10 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                       })}
                     </div>
 
-                    {/* Sunrise/Sunset row - only show if data is available */}
-                    {(forecast.sunrise || forecast.sunset) && (
+                    {/* Sunrise/Sunset and Tidal extremes row */}
+                    {(forecast.sunrise || forecast.sunset || (forecast.tidalExtremes && forecast.tidalExtremes.length > 0)) && (
                       <div className="mt-3 pt-2 border-t border-border/50">
-                        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground flex-wrap">
                           {forecast.sunrise && (
                             <div className="flex items-center gap-1">
                               <Sunrise className="w-3.5 h-3.5 text-amber-500" />
@@ -316,6 +289,18 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                               <span>{format(new Date(forecast.sunset), "HH:mm")}</span>
                             </div>
                           )}
+                          {forecast.tidalExtremes && forecast.tidalExtremes.map((extreme, idx) => (
+                            <div key={idx} className="flex items-center gap-1">
+                              {extreme.type === 'high' ? (
+                                <ArrowUp className="w-3.5 h-3.5 text-sky-500" />
+                              ) : (
+                                <ArrowDown className="w-3.5 h-3.5 text-sky-500" />
+                              )}
+                              <span>
+                                {extreme.type === 'high' ? 'Flo' : 'Fjære'} {extreme.time}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

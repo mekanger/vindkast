@@ -23,11 +23,18 @@ export interface WindForecast {
   tidalHeight?: number;  // cm relative to chart datum
 }
 
+export interface TidalExtreme {
+  time: string;  // HH:mm format
+  type: 'high' | 'low';
+  height: number;  // cm
+}
+
 export interface DayForecast {
   date: string;
   forecasts: WindForecast[];
   sunrise?: string;  // ISO time string
   sunset?: string;   // ISO time string
+  tidalExtremes?: TidalExtreme[];  // High/low tide times between 08:00-20:00
 }
 
 export interface LocationWeather {

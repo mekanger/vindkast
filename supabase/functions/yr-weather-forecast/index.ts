@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v9_${roundedLat}_${roundedLon}`; // v9 adds sunrise/sunset
+    const cacheKey = `weather_v10_${roundedLat}_${roundedLon}`; // v10 adds tidal extremes
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -304,7 +304,50 @@ serve(async (req) => {
     
     // Get the next 3 days
     const now = new Date();
-    const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string }[] = [];
+    const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string; tidalExtremes?: { time: string; type: 'high' | 'low'; height: number }[] }[] = [];
+
+    // Helper function to find tidal extremes (high/low tide) for a specific date between 08:00 and 20:00
+    const findTidalExtremes = (targetYear: number, targetMonth: number, targetDay: number) => {
+      const dayTidalData = tidalData.filter(td => 
+        td.year === targetYear && 
+        td.month === targetMonth && 
+        td.day === targetDay &&
+        td.hour >= 8 && td.hour < 20 // Only 08:00 to 20:00
+      ).sort((a, b) => {
+        // Sort by time
+        if (a.hour !== b.hour) return a.hour - b.hour;
+        return a.minute - b.minute;
+      });
+
+      if (dayTidalData.length < 3) return []; // Need at least 3 points to find extremes
+
+      const extremes: { time: string; type: 'high' | 'low'; height: number }[] = [];
+
+      for (let i = 1; i < dayTidalData.length - 1; i++) {
+        const prev = dayTidalData[i - 1];
+        const curr = dayTidalData[i];
+        const next = dayTidalData[i + 1];
+
+        // Local maximum (high tide)
+        if (curr.total > prev.total && curr.total > next.total) {
+          extremes.push({
+            time: `${curr.hour.toString().padStart(2, '0')}:${curr.minute.toString().padStart(2, '0')}`,
+            type: 'high',
+            height: Math.round(curr.total * 100), // Convert to cm
+          });
+        }
+        // Local minimum (low tide)
+        else if (curr.total < prev.total && curr.total < next.total) {
+          extremes.push({
+            time: `${curr.hour.toString().padStart(2, '0')}:${curr.minute.toString().padStart(2, '0')}`,
+            type: 'low',
+            height: Math.round(curr.total * 100), // Convert to cm
+          });
+        }
+      }
+
+      return extremes;
+    };
 
     for (let d = 0; d < 3; d++) {
       const targetDate = new Date(now);
@@ -402,11 +445,19 @@ serve(async (req) => {
       // Get sunrise/sunset for this day
       const daySun = sunData.get(dateStr);
       
+      // Find tidal extremes for this day
+      const tidalExtremes = findTidalExtremes(
+        parseInt(dateStr.split('-')[0], 10),
+        parseInt(dateStr.split('-')[1], 10),
+        parseInt(dateStr.split('-')[2], 10)
+      );
+      
       days.push({
         date: dateStr,
         forecasts: dayForecasts,
         sunrise: daySun?.sunrise,
         sunset: daySun?.sunset,
+        tidalExtremes: tidalExtremes.length > 0 ? tidalExtremes : undefined,
       });
     }
 
