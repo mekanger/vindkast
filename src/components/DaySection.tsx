@@ -292,9 +292,9 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                             }
                             if (forecast.tidalExtremes) {
                               forecast.tidalExtremes.forEach((extreme) => {
-                                // Parse time string like "06:30" into a sortable date
+                                // Parse time string like "06:30" into a sortable date using the forecast date
                                 const [hours, minutes] = extreme.time.split(':').map(Number);
-                                const tidalDate = new Date();
+                                const tidalDate = parseISO(isoDate);
                                 tidalDate.setHours(hours, minutes, 0, 0);
                                 events.push({ type: extreme.type, time: extreme.time, sortTime: tidalDate });
                               });
