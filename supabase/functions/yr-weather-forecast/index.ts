@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v13_${roundedLat}_${roundedLon}`; // v13 improves tidal extreme detection (prominence + min-gap)
+    const cacheKey = `weather_v14_${roundedLat}_${roundedLon}`; // v14 enforces alternating high/low sequence
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -403,25 +403,39 @@ serve(async (req) => {
 
       if (candidates.length === 0) return [];
 
-      // Sort by time and remove "too-close" wiggles by keeping the more prominent candidate
+      // Sort by time
       candidates.sort((a, b) => a.minutes - b.minutes);
 
+      // Enforce alternating sequence: high → low → high or low → high → low
+      // Pick the most prominent candidate for each "slot" in the alternating sequence
       const picked: Candidate[] = [];
+      
       for (const c of candidates) {
         const last = picked[picked.length - 1];
+        
         if (!last) {
+          // First candidate - accept it
           picked.push(c);
           continue;
         }
-
+        
+        // Same type as last? Keep the one with higher prominence
+        if (c.type === last.type) {
+          if (c.prominenceM > last.prominenceM) {
+            picked[picked.length - 1] = c;
+          }
+          // Otherwise skip this candidate
+          continue;
+        }
+        
+        // Different type - check minimum gap
         if (c.minutes - last.minutes < MIN_GAP_MIN) {
-          // Keep whichever is more "real"
-          const lastScore = last.prominenceM;
-          const curScore = c.prominenceM;
-          if (curScore > lastScore) {
+          // Too close - keep the more prominent one
+          if (c.prominenceM > last.prominenceM) {
             picked[picked.length - 1] = c;
           }
         } else {
+          // Good gap and alternating type - accept
           picked.push(c);
         }
       }
