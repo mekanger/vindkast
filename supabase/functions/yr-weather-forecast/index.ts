@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v14_${roundedLat}_${roundedLon}`; // v14 enforces alternating high/low sequence
+    const cacheKey = `weather_v15_${roundedLat}_${roundedLon}`; // v15 increases min-gap between tide events to avoid false extra lows/highs
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -320,7 +320,7 @@ serve(async (req) => {
       const SMOOTH_RADIUS = 2; // 5-point moving average (good for 10-min data)
       const PROMINENCE_M = 0.06; // 6 cm
       const PROM_WINDOW_MIN = 180; // +/- 3 hours for prominence calculation
-      const MIN_GAP_MIN = 120; // at least 2 hours between any two events
+      const MIN_GAP_MIN = 300; // at least 5 hours between any two events (semi-diurnal tides ~6h)
 
       const day = tidalData
         .filter((td) => td.year === targetYear && td.month === targetMonth && td.day === targetDay)
@@ -430,14 +430,12 @@ serve(async (req) => {
         
         // Different type - check minimum gap
         if (c.minutes - last.minutes < MIN_GAP_MIN) {
-          // Too close - keep the more prominent one
-          if (c.prominenceM > last.prominenceM) {
-            picked[picked.length - 1] = c;
-          }
-        } else {
-          // Good gap and alternating type - accept
-          picked.push(c);
+          // Too close for a real tide cycle (this is almost always a wiggle) → ignore
+          continue;
         }
+
+        // Good gap and alternating type - accept
+        picked.push(c);
       }
 
       // Convert to response shape
