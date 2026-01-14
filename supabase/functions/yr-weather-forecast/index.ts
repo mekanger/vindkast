@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v10_${roundedLat}_${roundedLon}`; // v10 adds tidal extremes
+    const cacheKey = `weather_v11_${roundedLat}_${roundedLon}`; // v11 fixes tidal extreme detection
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -306,75 +306,54 @@ serve(async (req) => {
     const now = new Date();
     const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string; tidalExtremes?: { time: string; type: 'high' | 'low'; height: number }[] }[] = [];
 
-    // Helper function to find tidal extremes (high/low tide) for a specific date between 08:00 and 20:00
+    // Helper function to find tidal extremes (flo/fjære) for a specific date in the time window 08:00–20:00.
+    // Important: We intentionally pick the *highest* and *lowest* water level within the window,
+    // rather than looking for small local wiggles that can produce impossible 10-minute "flo/fjære" pairs.
     const findTidalExtremes = (targetYear: number, targetMonth: number, targetDay: number) => {
-      const dayTidalData = tidalData.filter(td => 
-        td.year === targetYear && 
-        td.month === targetMonth && 
-        td.day === targetDay &&
-        td.hour >= 8 && td.hour < 20 // Only 08:00 to 20:00
-      ).sort((a, b) => {
-        // Sort by time
-        if (a.hour !== b.hour) return a.hour - b.hour;
-        return a.minute - b.minute;
+      const WINDOW_START_MIN = 8 * 60;
+      const WINDOW_END_MIN = 20 * 60;
+
+      const dayTidalData = tidalData
+        .filter((td) => td.year === targetYear && td.month === targetMonth && td.day === targetDay)
+        .map((td) => ({ ...td, minutes: td.hour * 60 + td.minute }))
+        .filter((td) => td.minutes >= WINDOW_START_MIN && td.minutes <= WINDOW_END_MIN)
+        .sort((a, b) => a.minutes - b.minutes);
+
+      if (dayTidalData.length < 2) return [];
+
+      const minEntry = dayTidalData.reduce((acc, cur) => (cur.total < acc.total ? cur : acc), dayTidalData[0]);
+      const maxEntry = dayTidalData.reduce((acc, cur) => (cur.total > acc.total ? cur : acc), dayTidalData[0]);
+
+      // If the range is basically flat (< 5cm) inside the window, don't show anything.
+      if (Math.abs(maxEntry.total - minEntry.total) < 0.05) return [];
+
+      const formatTime = (m: number) => {
+        const hh = Math.floor(m / 60);
+        const mm = m % 60;
+        return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`;
+      };
+
+      const extremes: { time: string; type: 'high' | 'low'; height: number; minutes: number }[] = [];
+
+      extremes.push({
+        time: formatTime(maxEntry.minutes),
+        type: 'high',
+        height: Math.round(maxEntry.total * 100),
+        minutes: maxEntry.minutes,
       });
 
-      if (dayTidalData.length < 5) return []; // Need sufficient data points
-
-      // Find significant extremes using a larger window and minimum height difference
-      const extremes: { time: string; type: 'high' | 'low'; height: number; minutes: number }[] = [];
-      const MIN_HEIGHT_DIFF = 0.05; // Minimum 5cm difference to be considered significant
-      const MIN_TIME_GAP_MINUTES = 180; // At least 3 hours between extremes (tidal cycle is ~6 hours)
-
-      // Use a sliding window approach - look at a wider neighborhood
-      const windowSize = 6; // Look at 6 points on each side (typically ~1 hour of data)
-      
-      for (let i = windowSize; i < dayTidalData.length - windowSize; i++) {
-        const curr = dayTidalData[i];
-        const currMinutes = curr.hour * 60 + curr.minute;
-        
-        // Get values in the window
-        let isLocalMax = true;
-        let isLocalMin = true;
-        let maxDiff = 0;
-        
-        for (let j = i - windowSize; j <= i + windowSize; j++) {
-          if (j === i) continue;
-          const other = dayTidalData[j];
-          const diff = Math.abs(curr.total - other.total);
-          maxDiff = Math.max(maxDiff, diff);
-          
-          if (other.total >= curr.total) isLocalMax = false;
-          if (other.total <= curr.total) isLocalMin = false;
-        }
-        
-        // Only add if it's a significant extreme with enough height difference
-        if ((isLocalMax || isLocalMin) && maxDiff >= MIN_HEIGHT_DIFF) {
-          // Check time gap from last extreme
-          const lastExtreme = extremes[extremes.length - 1];
-          if (lastExtreme) {
-            const timeGap = currMinutes - lastExtreme.minutes;
-            if (timeGap < MIN_TIME_GAP_MINUTES) {
-              // If this extreme is more significant (greater height diff), replace the last one
-              if (maxDiff > Math.abs(lastExtreme.height / 100)) {
-                extremes.pop();
-              } else {
-                continue; // Skip this one, keep the previous
-              }
-            }
-          }
-          
-          extremes.push({
-            time: `${curr.hour.toString().padStart(2, '0')}:${curr.minute.toString().padStart(2, '0')}`,
-            type: isLocalMax ? 'high' : 'low',
-            height: Math.round(curr.total * 100), // Convert to cm
-            minutes: currMinutes,
-          });
-        }
+      if (minEntry.minutes !== maxEntry.minutes) {
+        extremes.push({
+          time: formatTime(minEntry.minutes),
+          type: 'low',
+          height: Math.round(minEntry.total * 100),
+          minutes: minEntry.minutes,
+        });
       }
 
-      // Remove the minutes field before returning
-      return extremes.map(({ time, type, height }) => ({ time, type, height }));
+      return extremes
+        .sort((a, b) => a.minutes - b.minutes)
+        .map(({ time, type, height }) => ({ time, type, height }));
     };
 
     for (let d = 0; d < 3; d++) {
