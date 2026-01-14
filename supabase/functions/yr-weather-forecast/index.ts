@@ -319,34 +319,62 @@ serve(async (req) => {
         return a.minute - b.minute;
       });
 
-      if (dayTidalData.length < 3) return []; // Need at least 3 points to find extremes
+      if (dayTidalData.length < 5) return []; // Need sufficient data points
 
-      const extremes: { time: string; type: 'high' | 'low'; height: number }[] = [];
+      // Find significant extremes using a larger window and minimum height difference
+      const extremes: { time: string; type: 'high' | 'low'; height: number; minutes: number }[] = [];
+      const MIN_HEIGHT_DIFF = 0.05; // Minimum 5cm difference to be considered significant
+      const MIN_TIME_GAP_MINUTES = 180; // At least 3 hours between extremes (tidal cycle is ~6 hours)
 
-      for (let i = 1; i < dayTidalData.length - 1; i++) {
-        const prev = dayTidalData[i - 1];
+      // Use a sliding window approach - look at a wider neighborhood
+      const windowSize = 6; // Look at 6 points on each side (typically ~1 hour of data)
+      
+      for (let i = windowSize; i < dayTidalData.length - windowSize; i++) {
         const curr = dayTidalData[i];
-        const next = dayTidalData[i + 1];
-
-        // Local maximum (high tide)
-        if (curr.total > prev.total && curr.total > next.total) {
-          extremes.push({
-            time: `${curr.hour.toString().padStart(2, '0')}:${curr.minute.toString().padStart(2, '0')}`,
-            type: 'high',
-            height: Math.round(curr.total * 100), // Convert to cm
-          });
+        const currMinutes = curr.hour * 60 + curr.minute;
+        
+        // Get values in the window
+        let isLocalMax = true;
+        let isLocalMin = true;
+        let maxDiff = 0;
+        
+        for (let j = i - windowSize; j <= i + windowSize; j++) {
+          if (j === i) continue;
+          const other = dayTidalData[j];
+          const diff = Math.abs(curr.total - other.total);
+          maxDiff = Math.max(maxDiff, diff);
+          
+          if (other.total >= curr.total) isLocalMax = false;
+          if (other.total <= curr.total) isLocalMin = false;
         }
-        // Local minimum (low tide)
-        else if (curr.total < prev.total && curr.total < next.total) {
+        
+        // Only add if it's a significant extreme with enough height difference
+        if ((isLocalMax || isLocalMin) && maxDiff >= MIN_HEIGHT_DIFF) {
+          // Check time gap from last extreme
+          const lastExtreme = extremes[extremes.length - 1];
+          if (lastExtreme) {
+            const timeGap = currMinutes - lastExtreme.minutes;
+            if (timeGap < MIN_TIME_GAP_MINUTES) {
+              // If this extreme is more significant (greater height diff), replace the last one
+              if (maxDiff > Math.abs(lastExtreme.height / 100)) {
+                extremes.pop();
+              } else {
+                continue; // Skip this one, keep the previous
+              }
+            }
+          }
+          
           extremes.push({
             time: `${curr.hour.toString().padStart(2, '0')}:${curr.minute.toString().padStart(2, '0')}`,
-            type: 'low',
+            type: isLocalMax ? 'high' : 'low',
             height: Math.round(curr.total * 100), // Convert to cm
+            minutes: currMinutes,
           });
         }
       }
 
-      return extremes;
+      // Remove the minutes field before returning
+      return extremes.map(({ time, type, height }) => ({ time, type, height }));
     };
 
     for (let d = 0; d < 3; d++) {
