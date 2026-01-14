@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Location, LocationWeather, DayForecast, WindForecast } from "@/types/weather";
+import type { Location, LocationWeather, DayForecast, WindForecast, TidalExtreme } from "@/types/weather";
 
 export interface YrLocation {
   id: string;
@@ -69,11 +69,19 @@ export async function fetchWeatherForecast(location: Location): Promise<Location
       tidalHeight: fc.tidalHeight != null ? Math.round(fc.tidalHeight) : undefined,
     }));
 
+    // Map tidal extremes
+    const tidalExtremes: TidalExtreme[] | undefined = day.tidalExtremes?.map((te: any) => ({
+      time: te.time,
+      type: te.type as 'high' | 'low',
+      height: te.height,
+    }));
+
     return {
       date: day.date, // Keep as ISO format (YYYY-MM-DD) for matching
       forecasts,
       sunrise: day.sunrise ?? undefined,
       sunset: day.sunset ?? undefined,
+      tidalExtremes,
     };
   });
 
