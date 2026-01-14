@@ -5,12 +5,16 @@ import windsurfingImg from '@/assets/activities/windsurfing.png';
 import windfoilImg from '@/assets/activities/windfoil.png';
 import wingfoilImg from '@/assets/activities/wingfoil.png';
 import supfoilImg from '@/assets/activities/sup-foil.png';
+import kitingImg from '@/assets/activities/kiting.png';
+import supImg from '@/assets/activities/sup.png';
 
 const ACTIVITY_IMAGES: Record<ActivityType, string> = {
   'windsurfing': windsurfingImg,
   'windfoil': windfoilImg,
   'wingfoil': wingfoilImg,
   'sup-foil': supfoilImg,
+  'kiting': kitingImg,
+  'sup': supImg,
 };
 
 interface DailyActivityBadgeProps {
