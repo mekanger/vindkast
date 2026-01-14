@@ -135,7 +135,7 @@ serve(async (req) => {
     // Round coordinates to 2 decimal places for cache key (about 1km precision)
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const cacheKey = `weather_v11_${roundedLat}_${roundedLon}`; // v11 fixes tidal extreme detection
+    const cacheKey = `weather_v12_${roundedLat}_${roundedLon}`; // v12 uses local maxima/minima for accurate tidal extremes
 
     // Initialize Supabase client with service role for cache operations
     const supabase = createClient(
@@ -307,25 +307,18 @@ serve(async (req) => {
     const days: { date: string; forecasts: any[]; sunrise?: string; sunset?: string; tidalExtremes?: { time: string; type: 'high' | 'low'; height: number }[] }[] = [];
 
     // Helper function to find tidal extremes (flo/fjære) for a specific date in the time window 08:00–20:00.
-    // Important: We intentionally pick the *highest* and *lowest* water level within the window,
-    // rather than looking for small local wiggles that can produce impossible 10-minute "flo/fjære" pairs.
+    // Uses local maxima (flo) and minima (fjære) detection for accurate tide times.
     const findTidalExtremes = (targetYear: number, targetMonth: number, targetDay: number) => {
       const WINDOW_START_MIN = 8 * 60;
       const WINDOW_END_MIN = 20 * 60;
 
-      const dayTidalData = tidalData
+      // Get ALL tidal data for the day (including hours outside window for accurate peak detection)
+      const allDayData = tidalData
         .filter((td) => td.year === targetYear && td.month === targetMonth && td.day === targetDay)
         .map((td) => ({ ...td, minutes: td.hour * 60 + td.minute }))
-        .filter((td) => td.minutes >= WINDOW_START_MIN && td.minutes <= WINDOW_END_MIN)
         .sort((a, b) => a.minutes - b.minutes);
 
-      if (dayTidalData.length < 2) return [];
-
-      const minEntry = dayTidalData.reduce((acc, cur) => (cur.total < acc.total ? cur : acc), dayTidalData[0]);
-      const maxEntry = dayTidalData.reduce((acc, cur) => (cur.total > acc.total ? cur : acc), dayTidalData[0]);
-
-      // If the range is basically flat (< 5cm) inside the window, don't show anything.
-      if (Math.abs(maxEntry.total - minEntry.total) < 0.05) return [];
+      if (allDayData.length < 3) return [];
 
       const formatTime = (m: number) => {
         const hh = Math.floor(m / 60);
@@ -335,22 +328,37 @@ serve(async (req) => {
 
       const extremes: { time: string; type: 'high' | 'low'; height: number; minutes: number }[] = [];
 
-      extremes.push({
-        time: formatTime(maxEntry.minutes),
-        type: 'high',
-        height: Math.round(maxEntry.total * 100),
-        minutes: maxEntry.minutes,
-      });
+      // Find local maxima (flo) and minima (fjære) by comparing with neighbors
+      for (let i = 1; i < allDayData.length - 1; i++) {
+        const prev = allDayData[i - 1];
+        const curr = allDayData[i];
+        const next = allDayData[i + 1];
 
-      if (minEntry.minutes !== maxEntry.minutes) {
-        extremes.push({
-          time: formatTime(minEntry.minutes),
-          type: 'low',
-          height: Math.round(minEntry.total * 100),
-          minutes: minEntry.minutes,
-        });
+        // Only include extremes within the display window
+        if (curr.minutes < WINDOW_START_MIN || curr.minutes > WINDOW_END_MIN) continue;
+
+        // Local maximum (flo) - current is higher than both neighbors
+        if (curr.total > prev.total && curr.total > next.total) {
+          extremes.push({
+            time: formatTime(curr.minutes),
+            type: 'high',
+            height: Math.round(curr.total * 100),
+            minutes: curr.minutes,
+          });
+        }
+
+        // Local minimum (fjære) - current is lower than both neighbors
+        if (curr.total < prev.total && curr.total < next.total) {
+          extremes.push({
+            time: formatTime(curr.minutes),
+            type: 'low',
+            height: Math.round(curr.total * 100),
+            minutes: curr.minutes,
+          });
+        }
       }
 
+      // Sort by time and return without the internal 'minutes' field
       return extremes
         .sort((a, b) => a.minutes - b.minutes)
         .map(({ time, type, height }) => ({ time, type, height }));
