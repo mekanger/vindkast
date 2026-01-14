@@ -1,10 +1,11 @@
-import { Calendar, MapPin, Loader2, Thermometer, Sunrise, Sunset, ArrowUp, ArrowDown } from "lucide-react";
+import { Calendar, MapPin, Loader2, Thermometer, Sunrise, Sunset } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WindDirectionIcon } from "./WindDirectionIcon";
 import { WindSpeedBadge } from "./WindSpeedBadge";
 import { SeaCurrentBadge } from "./SeaCurrentBadge";
 import { WaveBadge } from "./WaveBadge";
+import { TidalIcon } from "./TidalIcon";
 import { TemperatureBadge } from "./TemperatureBadge";
 import { WeatherIcon } from "./WeatherIcon";
 import { DailyActivityBadge } from "./DailyActivityBadge";
@@ -291,11 +292,10 @@ export const DaySection = ({ date, locationsWithForecasts, onRemoveLocation, act
                           )}
                           {forecast.tidalExtremes && forecast.tidalExtremes.map((extreme, idx) => (
                             <div key={idx} className="flex items-center gap-1">
-                              {extreme.type === 'high' ? (
-                                <ArrowUp className="w-3.5 h-3.5 text-sky-500" />
-                              ) : (
-                                <ArrowDown className="w-3.5 h-3.5 text-sky-500" />
-                              )}
+                              <TidalIcon 
+                                type={extreme.type} 
+                                className="w-4 h-4 text-sky-500" 
+                              />
                               <span>
                                 {extreme.type === 'high' ? 'Flo' : 'Fjære'} {extreme.time}
                               </span>
