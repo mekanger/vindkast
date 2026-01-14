@@ -1,4 +1,4 @@
-export type ActivityType = 'windsurfing' | 'windfoil' | 'wingfoil' | 'sup-foil';
+export type ActivityType = 'windsurfing' | 'windfoil' | 'wingfoil' | 'sup-foil' | 'kiting' | 'sup';
 
 export type WindDirection = 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW';
 
@@ -22,6 +22,8 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   'windfoil': 'Windfoil',
   'wingfoil': 'Wingfoil',
   'sup-foil': 'SUP-foil',
+  'kiting': 'Kiting',
+  'sup': 'SUP',
 };
 
 export const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
@@ -29,6 +31,8 @@ export const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: 'windfoil', label: 'Windfoil' },
   { value: 'wingfoil', label: 'Wingfoil' },
   { value: 'sup-foil', label: 'SUP-foil' },
+  { value: 'kiting', label: 'Kiting' },
+  { value: 'sup', label: 'SUP' },
 ];
 
 export const WIND_DIRECTION_OPTIONS: { value: WindDirection; label: string }[] = [
