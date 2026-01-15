@@ -210,7 +210,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-foreground">Vindkast</h1>
-                  <p className="text-sm text-muted-foreground">Vindmelding fra yr.no</p>
+                  <p className="text-sm text-muted-foreground">Utviklet av Morten Ekanger</p>
                 </div>
               </div>
               <div className="md:hidden">
