@@ -20,28 +20,28 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create client with user's token to verify identity
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+    // Create client with user's token to verify identity
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     })
 
-    // Verify the user's token and get their ID
+    // Verify the user's token and get their ID using getUser
     const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token)
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token)
     
-    if (claimsError || !claimsData?.claims) {
-      console.error('Failed to verify token:', claimsError)
+    if (userError || !user) {
+      console.error('Failed to verify token:', userError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userId = claimsData.claims.sub
+    const userId = user.id
     console.log('Deleting user:', userId)
 
     // Create admin client with service role to delete the user
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Delete the user (CASCADE will handle profiles and saved_locations)
+    // Delete the user (CASCADE will handle profiles, saved_locations, and activity_rules)
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId)
 
     if (deleteError) {
