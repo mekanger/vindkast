@@ -27,7 +27,7 @@ export const GustBadge = ({ gust, className, size = "sm" }: GustBadgeProps) => {
       color,
       className
     )}>
-      {gust.toFixed(1)}
+      {Math.round(gust)}
     </span>
   );
 };
