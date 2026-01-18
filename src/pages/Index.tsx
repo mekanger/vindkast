@@ -160,7 +160,7 @@ const Index = () => {
     }
   }, [user, removeLocation, deleteRulesForLocation]);
 
-  // Generate dates for next 4 days (based on current local date)
+  // Generate dates for next 3 days (based on current local date)
   // Hide today's section from 19:00 onwards
   const dayDates = useMemo(() => {
     const dates: string[] = [];
@@ -170,7 +170,7 @@ const Index = () => {
     // Start from tomorrow if it's 19:00 or later
     const startOffset = currentHour >= 19 ? 1 : 0;
     
-    for (let i = startOffset; i < startOffset + 4; i++) {
+    for (let i = startOffset; i < startOffset + 3; i++) {
       const date = new Date(now);
       date.setDate(now.getDate() + i);
       // Use local date formatting (YYYY-MM-DD)
