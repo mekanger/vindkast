@@ -39,7 +39,7 @@ export const WindSpeedBadge = ({ speed, gust, className, size = "md", unit = "ms
       text,
       className
     )}>
-      {displayValue.toFixed(1)}
+      {Math.round(displayValue)}
     </span>
   );
 };
