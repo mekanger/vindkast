@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wind, Mail, Lock, Loader2, CheckCircle } from 'lucide-react';
+import { Wind, Mail, Lock, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,17 +14,24 @@ const authSchema = z.object({
   password: z.string().min(6, { message: 'Passord må være minst 6 tegn' }),
 });
 
+const emailSchema = z.object({
+  email: z.string().trim().email({ message: 'Ugyldig e-postadresse' }),
+});
+
+type AuthMode = 'login' | 'signup' | 'forgot-password';
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -33,6 +40,16 @@ const Auth = () => {
   }, [user, navigate]);
 
   const validateForm = () => {
+    if (mode === 'forgot-password') {
+      const result = emailSchema.safeParse({ email });
+      if (!result.success) {
+        setErrors({ email: result.error.errors[0].message });
+        return false;
+      }
+      setErrors({});
+      return true;
+    }
+
     const result = authSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
@@ -55,7 +72,18 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (mode === 'forgot-password') {
+        const { error } = await resetPassword(email);
+        if (error) {
+          toast({
+            title: 'Kunne ikke sende e-post',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          setResetEmailSent(true);
+        }
+      } else if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) {
           let message = error.message;
@@ -91,7 +119,6 @@ const Auth = () => {
             variant: 'destructive',
           });
         } else {
-          // Show confirmation message instead of navigating
           setShowConfirmation(true);
         }
       }
@@ -115,6 +142,43 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show reset email sent confirmation
+  if (resetEmailSent) {
+    return (
+      <div className="min-h-screen gradient-sky flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-card">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-green-500 shadow-soft">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Sjekk e-posten din!</CardTitle>
+            <CardDescription className="text-base">
+              Vi har sendt en lenke til <strong>{email}</strong> for å tilbakestille passordet ditt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Finner du ikke e-posten? Sjekk søppelpost-mappen.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                setResetEmailSent(false);
+                setMode('login');
+              }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Tilbake til innlogging
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Show confirmation message after signup
   if (showConfirmation) {
@@ -142,9 +206,69 @@ const Auth = () => {
               className="w-full"
               onClick={() => {
                 setShowConfirmation(false);
-                setIsLogin(true);
+                setMode('login');
               }}
             >
+              Tilbake til innlogging
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Forgot password form
+  if (mode === 'forgot-password') {
+    return (
+      <div className="min-h-screen gradient-sky flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-card">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl gradient-wind shadow-soft">
+                <Wind className="w-8 h-8 text-primary-foreground animate-wind" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Glemt passord?</CardTitle>
+            <CardDescription>
+              Skriv inn e-postadressen din, så sender vi deg en lenke for å tilbakestille passordet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-post</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="din@epost.no"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                Send tilbakestillingslenke
+              </Button>
+            </form>
+
+            <Button 
+              variant="ghost" 
+              className="w-full"
+              onClick={() => setMode('login')}
+              disabled={loading}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Tilbake til innlogging
             </Button>
           </CardContent>
@@ -164,7 +288,7 @@ const Auth = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Vindkast</CardTitle>
           <CardDescription>
-            {isLogin ? 'Logg inn for å se dine lagrede steder' : 'Opprett en konto for å lagre steder'}
+            {mode === 'login' ? 'Logg inn for å se dine lagrede steder' : 'Opprett en konto for å lagre steder'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -189,7 +313,19 @@ const Auth = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Passord</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Passord</Label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot-password')}
+                    className="text-xs text-primary hover:underline"
+                    disabled={loading}
+                  >
+                    Glemt passord?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -211,7 +347,7 @@ const Auth = () => {
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              {isLogin ? 'Logg inn' : 'Registrer deg'}
+              {mode === 'login' ? 'Logg inn' : 'Registrer deg'}
             </Button>
           </form>
 
@@ -253,14 +389,14 @@ const Auth = () => {
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? 'Har du ikke en konto?' : 'Har du allerede en konto?'}{' '}
+            {mode === 'login' ? 'Har du ikke en konto?' : 'Har du allerede en konto?'}{' '}
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="font-medium text-primary hover:underline"
               disabled={loading}
             >
-              {isLogin ? 'Registrer deg' : 'Logg inn'}
+              {mode === 'login' ? 'Registrer deg' : 'Logg inn'}
             </button>
           </p>
         </CardContent>
