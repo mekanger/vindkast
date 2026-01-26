@@ -217,9 +217,10 @@ const Index = () => {
                 {user ? (
                   <UserMenu />
                 ) : (
-                  <Button variant="ghost" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild>
                     <Link to="/auth">
-                      <LogIn className="w-4 h-4" />
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Logg inn
                     </Link>
                   </Button>
                 )}
