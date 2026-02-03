@@ -286,7 +286,7 @@ const Auth = () => {
               <Wind className="w-8 h-8 text-primary-foreground animate-wind" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Vindkast</CardTitle>
+          <CardTitle className="text-2xl font-bold">Vindapp</CardTitle>
           <CardDescription>
             {mode === 'login' ? 'Logg inn for å se dine lagrede steder' : 'Opprett en konto for å lagre steder'}
           </CardDescription>
