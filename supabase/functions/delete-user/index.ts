@@ -29,19 +29,19 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     })
 
-    // Verify the user's token and get their ID using getUser
+    // Verify the user's token using getClaims (more efficient than getUser)
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await userClient.auth.getUser(token)
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token)
     
-    if (userError || !user) {
-      console.error('Failed to verify token:', userError)
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error('Failed to verify token:', claimsError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userId = user.id
+    const userId = claimsData.claims.sub as string
     console.log('Deleting user:', userId)
 
     // Create admin client with service role to delete the user
