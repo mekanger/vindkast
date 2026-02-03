@@ -14,9 +14,6 @@ export const EmptyState = () => {
       <h3 className="text-xl font-semibold text-foreground mb-2">
         Ingen steder lagt til
       </h3>
-      <p className="text-muted-foreground max-w-md">
-        Legg til steder ovenfor for å se detaljert værmelding tilpasset deg som driver med vannsport.
-      </p>
       <p className="text-muted-foreground max-w-md mt-2">
         Du må logge deg inn for å kunne lagre stedene dine.
       </p>
