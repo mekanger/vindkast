@@ -1,4 +1,4 @@
-# Vindkast 🌬️
+# Vindapp 🌬️
 
 En moderne webapp for vindsportentusiaster som viser vindmeldinger fra yr.no med aktivitetsanbefalinger.
 

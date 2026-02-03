@@ -210,7 +210,7 @@ const Index = () => {
                   <Wind className="w-6 h-6 text-primary-foreground animate-wind" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Vindkast</h1>
+                  <h1 className="text-xl font-bold text-foreground">Vindapp</h1>
                   <p className="text-sm text-muted-foreground">Utviklet av <a href="mailto:morten@ekanger.no" className="hover:underline">Morten Ekanger</a></p>
                 </div>
               </div>
