@@ -175,17 +175,8 @@ const SetPassword = () => {
             </Button>
           </form>
 
-          <Button 
-            variant="ghost" 
-            className="w-full"
-            onClick={handleSkip}
-            disabled={loading}
-          >
-            Hopp over for nå
-          </Button>
-          
           <p className="text-xs text-muted-foreground text-center">
-            Du kan alltid sette passord senere via "Glemt passord?" på innloggingssiden.
+            Du må sette et passord for å fortsette.
           </p>
         </CardContent>
       </Card>
