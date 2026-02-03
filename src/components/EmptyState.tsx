@@ -15,7 +15,7 @@ export const EmptyState = () => {
         Ingen steder lagt til
       </h3>
       <p className="text-muted-foreground max-w-md">
-        Legg til steder for å se detaljert værmelding tilpasset deg som driver med vannsport.
+        Legg til steder ovenfor for å se detaljert værmelding tilpasset deg som driver med vannsport.
       </p>
       <p className="text-muted-foreground max-w-md mt-2">
         Du må logge deg inn for å kunne lagre stedene dine.
