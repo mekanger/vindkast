@@ -23,13 +23,14 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Settings2, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { ActivityRuleForm } from './ActivityRuleForm';
 import { ActivityRuleItem } from './ActivityRuleItem';
 import { ActivityRuleEditDialog } from './ActivityRuleEditDialog';
 import { useActivityRules } from '@/hooks/useActivityRules';
 import type { Location } from '@/types/weather';
 import type { ActivityRule, ActivityType } from '@/types/activity';
+import windsurfingImg from '@/assets/activities/windsurfing.png';
 
 interface ActivityRulesManagerProps {
   locations: Location[];
@@ -97,7 +98,7 @@ export const ActivityRulesManager = ({ locations, rules, onRulesChange }: Activi
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
-            <Settings2 className="w-4 h-4" />
+            <img src={windsurfingImg} alt="Aktiviteter" className="w-5 h-5 rounded-full object-cover" />
             <span className="hidden sm:inline">Aktiviteter</span>
           </Button>
         </SheetTrigger>
