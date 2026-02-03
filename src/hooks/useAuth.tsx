@@ -74,7 +74,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Even if signOut fails (e.g., session already invalid), clear local state
+      console.warn('Sign out error (may be expected if session is invalid):', error);
+    }
+    // Always clear local state
+    setSession(null);
+    setUser(null);
   };
 
   const resetPassword = async (email: string) => {
