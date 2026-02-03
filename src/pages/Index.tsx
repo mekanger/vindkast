@@ -273,8 +273,9 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-6 border-t border-border/50 bg-background/50 backdrop-blur-sm">
-        <div className="container max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
+        <div className="container max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground space-y-1">
           <p>Værdata fra yr.no, levert av Meteorologisk institutt og NRK</p>
+          <p>Utviklet av <a href="mailto:morten@ekanger.no" className="hover:underline">Morten Ekanger</a></p>
         </div>
       </footer>
     </div>
