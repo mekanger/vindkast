@@ -79,13 +79,16 @@ const Index = () => {
 
   // Reset state when user changes (e.g., logout or account deletion)
   useEffect(() => {
+    // Only react to user changes after auth loading is complete
+    if (authLoading) return;
+    
     setInitialLoadDone(false);
     // Clear locations when user logs out or is deleted
     if (!user) {
       setLocations([]);
       setLoadingIds(new Set());
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleLocationSelect = useCallback(async (location: Location) => {
     // Check if location already exists
