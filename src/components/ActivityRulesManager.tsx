@@ -97,8 +97,8 @@ export const ActivityRulesManager = ({ locations, rules, onRulesChange }: Activi
     <>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-            <img src={windsurfingImg} alt="Aktiviteter" className="h-9 w-9 rounded-full object-cover" />
+          <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+            <img src={windsurfingImg} alt="Aktiviteter" className="h-7 w-7 rounded-full object-cover" />
           </Button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[90vw] max-w-md overflow-y-auto">
