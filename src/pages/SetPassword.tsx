@@ -105,7 +105,7 @@ const SetPassword = () => {
             </div>
             <CardTitle className="text-2xl font-bold">Passord satt!</CardTitle>
             <CardDescription className="text-base">
-              Du kan nå logge inn med e-post og passord. Du blir nå sendt til forsiden...
+              Kontoen din er nå klar. Du blir sendt til forsiden...
             </CardDescription>
           </CardHeader>
         </Card>
