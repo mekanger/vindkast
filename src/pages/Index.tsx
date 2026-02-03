@@ -211,7 +211,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-foreground">Vindapp</h1>
-                  <p className="text-sm text-muted-foreground">Utviklet av <a href="mailto:morten@ekanger.no" className="hover:underline">Morten Ekanger</a></p>
+                  <p className="text-sm text-muted-foreground">Værmelding for deg som driver med vannsport</p>
                 </div>
               </div>
               <div className="md:hidden">
