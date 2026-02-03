@@ -8,14 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-const authSchema = z.object({
-  email: z.string().trim().email({ message: 'Ugyldig e-postadresse' }),
-  password: z.string().min(6, { message: 'Passord må være minst 6 tegn' }),
-});
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.object({
   email: z.string().trim().email({ message: 'Ugyldig e-postadresse' }),
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().email({ message: 'Ugyldig e-postadresse' }),
+  password: z.string().min(1, { message: 'Passord er påkrevd' }),
 });
 
 type AuthMode = 'login' | 'signup' | 'forgot-password';
@@ -40,7 +41,7 @@ const Auth = () => {
   }, [user, navigate]);
 
   const validateForm = () => {
-    if (mode === 'forgot-password') {
+    if (mode === 'forgot-password' || mode === 'signup') {
       const result = emailSchema.safeParse({ email });
       if (!result.success) {
         setErrors({ email: result.error.errors[0].message });
@@ -50,7 +51,8 @@ const Auth = () => {
       return true;
     }
 
-    const result = authSchema.safeParse({ email, password });
+    // Login mode
+    const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
@@ -106,11 +108,18 @@ const Auth = () => {
           navigate('/');
         }
       } else {
-        const { error } = await signUp(email, password);
+        // Signup mode - use magic link (email only, no password)
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            shouldCreateUser: true,
+          }
+        });
         if (error) {
           let message = error.message;
           if (error.message.includes('User already registered')) {
-            message = 'Denne e-posten er allerede registrert';
+            message = 'Denne e-posten er allerede registrert. Prøv å logge inn i stedet.';
           }
           
           toast({
@@ -150,8 +159,8 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-card">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-xl bg-green-500 shadow-soft">
-                <CheckCircle className="w-8 h-8 text-white" />
+              <div className="p-3 rounded-xl bg-primary shadow-soft">
+                <CheckCircle className="w-8 h-8 text-primary-foreground" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">Sjekk e-posten din!</CardTitle>
@@ -187,14 +196,14 @@ const Auth = () => {
         <Card className="w-full max-w-md shadow-card">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-xl bg-green-500 shadow-soft">
-                <CheckCircle className="w-8 h-8 text-white" />
+              <div className="p-3 rounded-xl bg-primary shadow-soft">
+                <CheckCircle className="w-8 h-8 text-primary-foreground" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">Sjekk e-posten din!</CardTitle>
             <CardDescription className="text-base">
-              Vi har sendt en bekreftelseslenke til <strong>{email}</strong>. 
-              Klikk på lenken for å aktivere kontoen din.
+              Vi har sendt en innloggingslenke til <strong>{email}</strong>. 
+              Klikk på lenken for å logge inn og fullføre registreringen.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -288,7 +297,7 @@ const Auth = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Vindapp</CardTitle>
           <CardDescription>
-            {mode === 'login' ? 'Logg inn for å se dine lagrede steder' : 'Opprett en konto for å lagre steder'}
+            {mode === 'login' ? 'Logg inn for å se dine lagrede steder' : 'Oppgi e-posten din for å opprette en konto'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -312,10 +321,10 @@ const Auth = () => {
               )}
             </div>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Passord</Label>
-                {mode === 'login' && (
+            {mode === 'login' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Passord</Label>
                   <button
                     type="button"
                     onClick={() => setMode('forgot-password')}
@@ -324,30 +333,30 @@ const Auth = () => {
                   >
                     Glemt passord?
                   </button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-            </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              {mode === 'login' ? 'Logg inn' : 'Registrer deg'}
+              {mode === 'login' ? 'Logg inn' : 'Send registreringslenke'}
             </Button>
           </form>
 
