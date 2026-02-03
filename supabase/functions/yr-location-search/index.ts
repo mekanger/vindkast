@@ -14,20 +14,37 @@ const allowedOrigins = [
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin') || '';
-  const isAllowed = allowedOrigins.some(allowed => 
-    origin === allowed || 
-    origin.endsWith('.lovable.app') || 
+  const origin = req.headers.get('origin');
+
+  // For public functions (verify_jwt=false) we can safely reflect origin to support custom domains.
+  // If origin is missing, fall back to '*'.
+  const isKnownOrigin = !!origin && allowedOrigins.some((allowed) => allowed && origin === allowed);
+  const isLovableOrigin = !!origin && (
+    origin.endsWith('.lovable.app') ||
     origin.endsWith('.lovableproject.com') ||
     origin.endsWith('.gptengineer.run')
   );
-  
+
+  const allowOrigin = origin && (isKnownOrigin || isLovableOrigin || origin.startsWith('https://') || origin.startsWith('http://'))
+    ? origin
+    : '*';
+
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': [
+      'authorization',
+      'x-client-info',
+      'apikey',
+      'content-type',
+      // Supabase client adds these in some environments
+      'x-supabase-client-platform',
+      'x-supabase-client-platform-version',
+      'x-supabase-client-runtime',
+      'x-supabase-client-runtime-version',
+    ].join(', '),
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
+    ...(allowOrigin !== '*' ? { 'Vary': 'Origin' } : {}),
   };
 }
 
